@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+
+  <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -142,8 +143,8 @@
                         </button>
                     </div>
                     <p class="text-[11px] text-[#7dc6f2] font-medium mt-1 flex items-center gap-1.5 truncate">
-                        <span class="w-1.5 h-1.5 rounded-full bg-[#f5b82e] inline-block shrink-0"></span>
-                        <span>Control de Patio, Tiempos y Caja</span>
+                        <span id="sync-status-dot" class="w-2 h-2 rounded-full bg-[#f5b82e] inline-block shrink-0"></span>
+                        <span id="sync-status-text">Control de Patio, Tiempos y Caja</span>
                     </p>
                 </div>
             </div>
@@ -2085,5 +2086,199 @@
             setInterval(tickTimers, 1000);
         });
     </script>
+
+    <!-- ===================================================================== -->
+    <!-- CONFIGURACIÓN FIREBASE Y SINCRONIZACIÓN EN TIEMPO REAL (FIRESTORE)    -->
+    <!-- ===================================================================== -->
+    <script>
+        (function () {
+            window.__app_id = 'el-champusito-autolavado';
+            window.__firebase_config = {
+                apiKey: 'AIzaSyD5vu3XCdoW5V5WQvXyjWhbpKdb90dBhuE',
+                authDomain: 'el-champusito-autolavado.firebaseapp.com',
+                projectId: 'el-champusito-autolavado',
+                storageBucket: 'el-champusito-autolavado.firebasestorage.app',
+                messagingSenderId: '188694541518',
+                appId: '1:188694541518:web:9a19844be95ea514094c9f',
+                measurementId: 'G-PFY8H4304T'
+            };
+
+            function setSyncStatus(mode, text) {
+                const dot = document.getElementById('sync-status-dot');
+                const label = document.getElementById('sync-status-text');
+                if (label) label.textContent = text;
+                if (!dot) return;
+
+                if (mode === 'online') {
+                    dot.className = 'w-2 h-2 rounded-full bg-emerald-400 inline-block shrink-0';
+                } else if (mode === 'syncing') {
+                    dot.className = 'w-2 h-2 rounded-full bg-[#f5b82e] animate-ping inline-block shrink-0';
+                } else {
+                    dot.className = 'w-2 h-2 rounded-full bg-[#7dc6f2] inline-block shrink-0';
+                }
+            }
+
+            const cfg = window.__firebase_config;
+            if (!cfg || !cfg.apiKey || !cfg.projectId) {
+                setSyncStatus('local', 'Control de Patio, Tiempos y Caja · Local');
+                return;
+            }
+
+            const appId = encodeURIComponent(String(window.__app_id || 'el-champusito-autolavado'));
+            const docPath = `artifacts/${appId}/public/data/champusito_operacion/estado_principal`;
+            const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(cfg.projectId)}/databases/(default)/documents/${docPath}?key=${encodeURIComponent(cfg.apiKey)}`;
+
+            let lastRemoteStamp = 0;
+            let isApplyingRemote = false;
+            let pushDebounceTimer = null;
+            let pollIntervalId = null;
+
+            function toFirestoreValue(val) {
+                if (val === null || val === undefined) return { nullValue: null };
+                if (typeof val === 'boolean') return { booleanValue: val };
+                if (typeof val === 'number') {
+                    return Number.isInteger(val) ? { integerValue: String(val) } : { doubleValue: val };
+                }
+                if (typeof val === 'string') return { stringValue: val };
+                if (Array.isArray(val)) {
+                    return {
+                        arrayValue: {
+                            values: val.map(toFirestoreValue)
+                        }
+                    };
+                }
+                if (typeof val === 'object') {
+                    const fields = {};
+                    Object.keys(val).forEach((k) => {
+                        if (val[k] !== undefined) {
+                            fields[k] = toFirestoreValue(val[k]);
+                        }
+                    });
+                    return { mapValue: { fields } };
+                }
+                return { stringValue: String(val) };
+            }
+
+            function fromFirestoreValue(fsVal) {
+                if (!fsVal || typeof fsVal !== 'object') return null;
+                if ('nullValue' in fsVal) return null;
+                if ('booleanValue' in fsVal) return Boolean(fsVal.booleanValue);
+                if ('integerValue' in fsVal) return Number(fsVal.integerValue);
+                if ('doubleValue' in fsVal) return Number(fsVal.doubleValue);
+                if ('stringValue' in fsVal) return fsVal.stringValue;
+                if ('arrayValue' in fsVal) {
+                    const values = fsVal.arrayValue?.values || [];
+                    return values.map(fromFirestoreValue);
+                }
+                if ('mapValue' in fsVal) {
+                    const out = {};
+                    const fields = fsVal.mapValue?.fields || {};
+                    Object.keys(fields).forEach((k) => {
+                        out[k] = fromFirestoreValue(fields[k]);
+                    });
+                    return out;
+                }
+                return null;
+            }
+
+            async function safeFirestoreRequest(url, options) {
+                const resp = await fetch(url, options);
+                const rawText = await resp.text();
+                const trimmed = rawText.trim();
+                if (!resp.ok || !trimmed || trimmed.startsWith('<')) {
+                    throw new Error('Respuesta inválida de Firestore');
+                }
+                return JSON.parse(trimmed);
+            }
+
+            async function pushStateToFirestore() {
+                if (typeof appState === 'undefined' || isApplyingRemote) return;
+                try {
+                    setSyncStatus('syncing', 'Sincronizando con nube...');
+                    const { adminAuthenticated, ...sharedState } = appState;
+                    const cleanPayload = JSON.parse(JSON.stringify(sharedState));
+                    const nowStamp = Date.now();
+
+                    await safeFirestoreRequest(firestoreUrl, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            fields: {
+                                data: toFirestoreValue(cleanPayload),
+                                updatedAt: { integerValue: String(nowStamp) }
+                            }
+                        })
+                    });
+
+                    lastRemoteStamp = nowStamp;
+                    setSyncStatus('online', 'En línea · Multi-dispositivo');
+                } catch (_err) {
+                    setSyncStatus('local', 'Respaldo local activo');
+                }
+            }
+
+            async function pullStateFromFirestore() {
+                if (typeof appState === 'undefined') return;
+                try {
+                    const docJson = await safeFirestoreRequest(firestoreUrl, { method: 'GET' });
+                    const remoteStamp = Number(docJson?.fields?.updatedAt?.integerValue || 0);
+                    const remoteData = fromFirestoreValue(docJson?.fields?.data);
+
+                    if (remoteData && remoteStamp > lastRemoteStamp) {
+                        lastRemoteStamp = remoteStamp;
+                        isApplyingRemote = true;
+                        const keepAuth = Boolean(appState.adminAuthenticated);
+                        const base = typeof createInitialState === 'function' ? createInitialState() : {};
+
+                        appState = {
+                            ...base,
+                            ...appState,
+                            ...remoteData,
+                            branding: { ...(base.branding || {}), ...(remoteData.branding || {}) },
+                            adminAuthenticated: keepAuth
+                        };
+
+                        try {
+                            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+                        } catch (_storageErr) {}
+
+                        if (typeof applyBranding === 'function') applyBranding();
+                        if (typeof updateRoleUI === 'function') updateRoleUI();
+                        if (typeof populateFormSelects === 'function') populateFormSelects();
+                        if (typeof renderPatio === 'function') renderPatio();
+                        if (typeof renderCashAndRecepcion === 'function') renderCashAndRecepcion();
+
+                        isApplyingRemote = false;
+                    }
+                    setSyncStatus('online', 'En línea · Multi-dispositivo');
+                } catch (_err) {
+                    if (lastRemoteStamp === 0) {
+                        setSyncStatus('local', 'Respaldo local activo');
+                    }
+                }
+            }
+
+            const originalSaveState = window.saveState;
+            window.saveState = function () {
+                if (typeof originalSaveState === 'function') {
+                    originalSaveState();
+                }
+                if (!isApplyingRemote) {
+                    clearTimeout(pushDebounceTimer);
+                    pushDebounceTimer = setTimeout(pushStateToFirestore, 350);
+                }
+            };
+
+            window.addEventListener('DOMContentLoaded', () => {
+                pullStateFromFirestore();
+                pollIntervalId = setInterval(pullStateFromFirestore, 4000);
+            });
+
+            window.addEventListener('beforeunload', () => {
+                clearTimeout(pushDebounceTimer);
+                if (pollIntervalId) clearInterval(pollIntervalId);
+            });
+        })();
+    </script>
 </body>
-</html>
+</html>  
