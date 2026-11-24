@@ -1,0 +1,2089 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Champusito - Gestión Operativa de Autolavado</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts: Fredoka, Plus Jakarta Sans, JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=JetBrains+Mono:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-canvas: #eff4f8;
+            --bg-ice: #f3f8fc;
+            --navy-header: #0f2f4a;
+            --navy-pill: #092238;
+            --gold-accent: #f5b82e;
+            --sky-brand: #7dc6f2;
+            --sky-blue: #2573b3;
+            --border-soft: #d9e6f2;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-canvas);
+            color: var(--navy-header);
+            overflow-x: hidden;
+        }
+
+        .font-brand {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        .font-mono-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Impresión limpia de ticket */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #ticket-printable-area, #ticket-printable-area * {
+                visibility: visible;
+            }
+            #ticket-printable-area {
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 80mm;
+                padding: 8px;
+                background: #ffffff;
+                color: #0f2f4a;
+            }
+        }
+    </style>
+
+    <!-- Protección contra respuestas HTML inesperadas en sincronización -->
+    <script>
+        (function () {
+            function isHtmlSyntaxError(err) {
+                const msg = String(
+                    (err && (err.message || err.reason?.message || err.reason || err)) || ''
+                ).toLowerCase();
+                return msg.includes("unexpected token '<'") || msg.includes('unexpected token &lt;');
+            }
+
+            window.addEventListener('error', function (event) {
+                if (isHtmlSyntaxError(event.error || event.message || event.filename)) {
+                    event.preventDefault();
+                    return true;
+                }
+            }, true);
+
+            window.addEventListener('unhandledrejection', function (event) {
+                if (isHtmlSyntaxError(event.reason)) {
+                    event.preventDefault();
+                }
+            });
+        })();
+    </script>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- ===================================================================== -->
+    <!-- BARRA SUPERIOR AZUL MARINO (#0f2f4a) CON BORDE DORADO (#f5b82e)     -->
+    <!-- ===================================================================== -->
+    <header class="bg-[#0f2f4a] border-b-[3px] border-[#f5b82e] px-4 lg:px-6 py-2.5 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-[1440px] mx-auto flex flex-wrap items-center justify-between gap-3">
+
+            <!-- Izquierda: Logo en tarjeta blanca + Marca + Subtítulo -->
+            <div class="flex items-center gap-3 min-w-0">
+                <div id="header-logo-container" onclick="openBrandingModal()" title="Cambiar logo o nombre de marca"
+                     class="w-12 h-12 rounded-2xl bg-white p-1 shrink-0 cursor-pointer shadow-sm flex items-center justify-center relative overflow-hidden">
+                    <!-- Logo caricatura personaje lavador con cámara -->
+                    <svg viewBox="0 0 80 80" class="w-full h-full">
+                        <defs>
+                            <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#8ccdf5"/>
+                                <stop offset="100%" stop-color="#459bd6"/>
+                            </linearGradient>
+                        </defs>
+                        <rect x="2" y="2" width="76" height="76" rx="14" fill="url(#skyGrad)"/>
+                        <!-- Burbujas / nube inferior -->
+                        <path d="M4 62 Q16 54 30 60 Q46 52 62 60 Q72 56 76 62 L76 76 L4 76 Z" fill="#ffffff"/>
+                        <!-- Personaje lavador -->
+                        <circle cx="40" cy="31" r="10" fill="#fbd3b4" stroke="#0f2f4a" stroke-width="2"/>
+                        <!-- Gorra / casco -->
+                        <path d="M29 28 Q40 16 51 28 Z" fill="#2573b3" stroke="#0f2f4a" stroke-width="2"/>
+                        <path d="M44 25 L56 26" stroke="#0f2f4a" stroke-width="2.5" stroke-linecap="round"/>
+                        <!-- Ojos y sonrisa -->
+                        <circle cx="37" cy="31" r="1.4" fill="#0f2f4a"/>
+                        <circle cx="43" cy="31" r="1.4" fill="#0f2f4a"/>
+                        <path d="M37 35 Q40 38 43 35" fill="none" stroke="#0f2f4a" stroke-width="1.8" stroke-linecap="round"/>
+                        <!-- Torso y guante amarillo -->
+                        <path d="M27 56 Q28 42 40 42 Q52 42 53 56 Z" fill="#1d639b" stroke="#0f2f4a" stroke-width="2"/>
+                        <circle cx="24" cy="48" r="6" fill="#f5b82e" stroke="#0f2f4a" stroke-width="2"/>
+                        <circle cx="56" cy="48" r="6" fill="#f5b82e" stroke="#0f2f4a" stroke-width="2"/>
+                        <!-- Pequeña cámara en esquina inferior derecha -->
+                        <rect x="53" y="54" width="21" height="16" rx="4" fill="#0f2f4a" stroke="#ffffff" stroke-width="1.5"/>
+                        <circle cx="63.5" cy="62" r="4.5" fill="#7dc6f2" stroke="#ffffff" stroke-width="1.2"/>
+                    </svg>
+                </div>
+
+                <div class="min-w-0">
+                    <div class="flex items-center gap-1.5">
+                        <h1 id="business-name-display" class="font-brand text-xl sm:text-[22px] leading-none text-white tracking-tight truncate">
+                            El Champusito
+                        </h1>
+                        <button type="button" onclick="openBrandingModal()" title="Editar nombre y logo"
+                                class="text-[#9bcbe8] hover:text-[#f5b82e] transition-colors p-0.5 cursor-pointer">
+                            <i class="fa-solid fa-pen text-[11px]"></i>
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-[#7dc6f2] font-medium mt-1 flex items-center gap-1.5 truncate">
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#f5b82e] inline-block shrink-0"></span>
+                        <span>Control de Patio, Tiempos y Caja</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Derecha: Cápsula de Navegación + Reloj + Botón + Nuevo Auto -->
+            <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                <div class="bg-[#082136] border border-[#1d486e] rounded-2xl p-1 flex items-center gap-1.5">
+                    <!-- Botón Patio con contador amarillo -->
+                    <button type="button" id="nav-btn-patio" onclick="switchView('patio')"
+                            class="px-3.5 py-1.5 rounded-xl bg-[#2573b3] text-white text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer">
+                        <i class="fa-solid fa-stopwatch text-[11px]"></i>
+                        <span>Patio</span>
+                        <span id="header-patio-count" class="bg-[#f5b82e] text-[#0f2f4a] font-mono-num text-[11px] font-extrabold px-1.5 py-0.5 rounded-full leading-none">
+                            4
+                        </span>
+                    </button>
+
+                    <!-- Botón Recepción -->
+                    <button type="button" id="nav-btn-recepcion" onclick="switchView('recepcion')"
+                            class="px-3.5 py-1.5 rounded-xl text-[#b6d5ea] hover:text-white hover:bg-[#133b5c] text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer">
+                        <i class="fa-solid fa-clipboard-check text-[11px]"></i>
+                        <span>Recepción</span>
+                    </button>
+
+                    <!-- Selector de Perfil / Sesión Administrador con candado -->
+                    <div class="relative">
+                        <button type="button" id="role-switcher-btn" onclick="toggleRoleDropdown()"
+                                class="px-3.5 py-1.5 rounded-xl bg-[#0f2f4a] border border-[#f5b82e] text-[#f5b82e] text-xs font-extrabold flex items-center gap-2 hover:bg-[#173f61] transition-all cursor-pointer">
+                            <i class="fa-solid fa-user-shield text-[11px]"></i>
+                            <span id="current-role-label">Administrador</span>
+                            <i id="header-admin-lock-icon" class="fa-solid fa-lock text-[10px] text-[#f5b82e]"></i>
+                        </button>
+
+                        <!-- Menú desplegable de rol y sesión admin -->
+                        <div id="role-dropdown-menu" class="hidden absolute right-0 mt-2 w-60 bg-white rounded-2xl shadow-xl border border-[#d9e6f2] py-1.5 z-50 text-[#0f2f4a]">
+                            <div class="px-3.5 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                                Perfil Operativo
+                            </div>
+                            <button type="button" onclick="selectRole('Administrador')"
+                                    class="w-full px-3.5 py-2 text-left text-xs font-bold hover:bg-[#f3f8fc] flex items-center justify-between cursor-pointer">
+                                <span>
+                                    <i class="fa-solid fa-user-shield text-[#2573b3] mr-2"></i>Administrador
+                                    <span id="admin-pin-status-badge" class="ml-1 text-[10px] font-mono text-amber-600">(PIN)</span>
+                                </span>
+                                <span id="check-role-Administrador" class="text-emerald-600"><i class="fa-solid fa-check"></i></span>
+                            </button>
+                            <div id="dropdown-washers-list"></div>
+
+                            <div class="border-t border-slate-100 mt-1 pt-1 px-2 space-y-0.5">
+                                <button type="button" onclick="openPricingModal(); toggleRoleDropdown();"
+                                        class="w-full px-2.5 py-2 rounded-xl text-left text-xs font-extrabold text-[#0f2f4a] hover:bg-[#fef9e7] flex items-center gap-2 cursor-pointer">
+                                    <i class="fa-solid fa-tags text-[#f5b82e]"></i>
+                                    <span>Editar Precios de Servicios</span>
+                                </button>
+                                <button type="button" id="menu-admin-lock-btn" onclick="handleAdminSessionMenuAction(); toggleRoleDropdown();"
+                                        class="w-full px-2.5 py-2 rounded-xl text-left text-xs font-bold text-[#2573b3] hover:bg-[#f3f8fc] flex items-center gap-2 cursor-pointer">
+                                    <i class="fa-solid fa-key"></i>
+                                    <span id="menu-admin-lock-text">Iniciar Sesión Admin</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reloj monoespaciado y fecha en amarillo -->
+                <div class="hidden sm:flex flex-col items-end justify-center px-1.5 select-none">
+                    <span id="live-clock" class="font-mono-num text-sm font-extrabold text-[#f5b82e] leading-tight tracking-wider">
+                        15:57:53
+                    </span>
+                    <span id="live-date" class="text-[11px] font-semibold text-[#d3e7f5] leading-tight">
+                        Mar 24 De Nov
+                    </span>
+                </div>
+
+                <!-- Botón amarillo + Nuevo Auto -->
+                <button type="button" onclick="openNewVehicleModal()"
+                        class="px-4 py-2 rounded-xl bg-[#f5b82e] hover:bg-[#e5a81e] text-[#0f2f4a] font-extrabold text-xs sm:text-sm flex items-center gap-1.5 shadow-sm transition-all cursor-pointer">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    <span>Nuevo Auto</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===================================================================== -->
+    <!-- CONTENIDO PRINCIPAL                                                   -->
+    <!-- ===================================================================== -->
+    <main class="flex-1 max-w-[1440px] w-full mx-auto px-4 lg:px-6 py-4 space-y-4">
+
+        <!-- ================================================================= -->
+        <!-- VISTA 1: PATIO EN VIVO                                            -->
+        <!-- ================================================================= -->
+        <section id="view-patio" class="space-y-4">
+
+            <!-- 4 Tarjetas KPI Superiores -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+                <!-- KPI 1: EN ESPERA -->
+                <div onclick="setFilter('En Espera')"
+                     class="bg-white rounded-2xl border border-[#d7e6f3] px-5 py-4 flex items-center justify-between cursor-pointer hover:border-[#2573b3] transition-all">
+                    <div>
+                        <p class="text-[11px] font-extrabold uppercase tracking-wider text-[#2573b3]">EN ESPERA</p>
+                        <p id="kpi-espera" class="font-mono-num text-[28px] font-extrabold text-[#0f2f4a] leading-tight mt-1">0</p>
+                    </div>
+                    <div class="w-11 h-11 rounded-2xl bg-[#eaf3fb] text-[#2573b3] flex items-center justify-center text-base shrink-0">
+                        <i class="fa-solid fa-hourglass-half"></i>
+                    </div>
+                </div>
+
+                <!-- KPI 2: LAVANDO / DETALLE -->
+                <div onclick="setFilter('Lavando')"
+                     class="bg-white rounded-2xl border border-[#d7e6f3] px-5 py-4 flex items-center justify-between cursor-pointer hover:border-[#2573b3] transition-all">
+                    <div>
+                        <p class="text-[11px] font-extrabold uppercase tracking-wider text-[#2573b3]">LAVANDO / DETALLE</p>
+                        <p id="kpi-lavando" class="font-mono-num text-[28px] font-extrabold text-[#0f2f4a] leading-tight mt-1">3</p>
+                    </div>
+                    <div class="w-11 h-11 rounded-2xl bg-[#eaf3fb] text-[#2573b3] flex items-center justify-center text-base shrink-0">
+                        <i class="fa-solid fa-soap"></i>
+                    </div>
+                </div>
+
+                <!-- KPI 3: LISTOS ENTREGA -->
+                <div onclick="setFilter('Listo para Entrega')"
+                     class="bg-white rounded-2xl border border-[#bcead2] px-5 py-4 flex items-center justify-between cursor-pointer hover:border-emerald-500 transition-all">
+                    <div>
+                        <p class="text-[11px] font-extrabold uppercase tracking-wider text-[#0f9d58]">LISTOS ENTREGA</p>
+                        <p id="kpi-listos" class="font-mono-num text-[28px] font-extrabold text-[#0f9d58] leading-tight mt-1">1</p>
+                    </div>
+                    <div class="w-11 h-11 rounded-2xl bg-[#dff7ec] text-[#0f9d58] flex items-center justify-center text-base shrink-0">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                </div>
+
+                <!-- KPI 4: CON RETRASO -->
+                <div onclick="setFilter('RETRASO')"
+                     class="bg-white rounded-2xl border border-[#f8c8ce] px-5 py-4 flex items-center justify-between cursor-pointer hover:border-rose-500 transition-all">
+                    <div>
+                        <p class="text-[11px] font-extrabold uppercase tracking-wider text-[#dc2626]">CON RETRASO</p>
+                        <p id="kpi-retraso" class="font-mono-num text-[28px] font-extrabold text-[#dc2626] leading-tight mt-1">2</p>
+                    </div>
+                    <div class="w-11 h-11 rounded-2xl bg-[#fde8eb] text-[#dc2626] flex items-center justify-center text-base shrink-0">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Barra de Filtros y Buscador -->
+            <div class="bg-[#e8f1f8] border border-[#cfe0ee] rounded-2xl px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex flex-wrap items-center gap-1.5" id="filter-pills-container">
+                    <button type="button" data-filter="TODOS" onclick="setFilter('TODOS')"
+                            class="filter-pill px-4 py-1.5 rounded-xl bg-[#0f2f4a] text-white text-xs font-extrabold transition-all cursor-pointer">
+                        Todos
+                    </button>
+                    <button type="button" data-filter="En Espera" onclick="setFilter('En Espera')"
+                            class="filter-pill px-3.5 py-1.5 rounded-xl bg-white text-[#2573b3] hover:bg-[#f5faff] text-xs font-bold border border-[#d6e5f2] transition-all cursor-pointer">
+                        En Espera
+                    </button>
+                    <button type="button" data-filter="Lavando" onclick="setFilter('Lavando')"
+                            class="filter-pill px-3.5 py-1.5 rounded-xl bg-white text-[#2573b3] hover:bg-[#f5faff] text-xs font-bold border border-[#d6e5f2] transition-all cursor-pointer">
+                        Lavando
+                    </button>
+                    <button type="button" data-filter="Secado / Detallado" onclick="setFilter('Secado / Detallado')"
+                            class="filter-pill px-3.5 py-1.5 rounded-xl bg-white text-[#2573b3] hover:bg-[#f5faff] text-xs font-bold border border-[#d6e5f2] transition-all cursor-pointer">
+                        Secado / Detallado
+                    </button>
+                    <button type="button" data-filter="Listo para Entrega" onclick="setFilter('Listo para Entrega')"
+                            class="filter-pill px-3.5 py-1.5 rounded-xl bg-white text-[#2573b3] hover:bg-[#f5faff] text-xs font-bold border border-[#d6e5f2] transition-all cursor-pointer">
+                        Listos
+                    </button>
+                </div>
+
+                <!-- Buscador a la derecha -->
+                <div class="relative w-full sm:w-72">
+                    <i class="fa-solid fa-magnifying-glass text-[#7ea3c2] text-xs absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                    <input type="text" id="search-input" oninput="renderPatio()"
+                           placeholder="Buscar placa, auto o cliente..."
+                           class="w-full pl-9 pr-3.5 py-1.5 bg-white border border-[#d0e1ef] rounded-xl text-xs font-medium text-[#0f2f4a] placeholder-[#89a7c2] focus:outline-none focus:border-[#2573b3]">
+                </div>
+            </div>
+
+            <!-- Grid de Tarjetas de Vehículos en Patio -->
+            <div id="patio-cards-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <!-- Renderizado dinámico por JS -->
+            </div>
+
+            <!-- Estado vacío si no hay resultados -->
+            <div id="patio-empty-state" class="hidden bg-white rounded-2xl border border-[#d7e6f3] p-10 text-center space-y-2">
+                <i class="fa-solid fa-car text-3xl text-[#9ec2df]"></i>
+                <p class="font-brand text-lg text-[#0f2f4a]">No hay autos con este filtro</p>
+                <p class="text-xs text-slate-500">Prueba cambiando el filtro o registra un nuevo vehículo en patio.</p>
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- VISTA 2: RECEPCIÓN, TARIFAS Y CAJA DEL TURNO                     -->
+        <!-- ================================================================= -->
+        <section id="view-recepcion" class="hidden space-y-5">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+                <!-- Columna Izquierda: Formulario Rápido de Recepción con Cámara -->
+                <div class="lg:col-span-7 bg-white rounded-2xl border border-[#d7e6f3] p-5 sm:p-6 space-y-4">
+                    <div class="flex items-center justify-between border-b border-[#edf4fa] pb-3">
+                        <div>
+                            <h2 class="font-brand text-xl text-[#0f2f4a]">Recepción Rápida de Vehículo</h2>
+                            <p class="text-xs text-slate-500">Registra entrada, foto desde cámara, paquete, lavador y tiempo estimado.</p>
+                        </div>
+                        <span class="px-3 py-1 rounded-full bg-[#eaf3fb] text-[#2573b3] text-xs font-extrabold">
+                            Turno Activo
+                        </span>
+                    </div>
+
+                    <form onsubmit="handleInlineRegister(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">Placa del Auto *</label>
+                                <input type="text" id="inline-plate" required maxlength="12" placeholder="Ej. UAY-482-B"
+                                       class="w-full px-3.5 py-2.5 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl font-mono-num text-sm font-extrabold uppercase text-[#0f2f4a] focus:outline-none focus:border-[#2573b3]">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">Vehículo y Color *</label>
+                                <input type="text" id="inline-model" required placeholder="Ej. Volkswagen Jetta Blanco"
+                                       class="w-full px-3.5 py-2.5 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl text-sm font-semibold text-[#0f2f4a] focus:outline-none focus:border-[#2573b3]">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">Cliente *</label>
+                                <input type="text" id="inline-client" required placeholder="Ej. Carlos Mendoza"
+                                       class="w-full px-3.5 py-2.5 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl text-sm font-semibold text-[#0f2f4a] focus:outline-none focus:border-[#2573b3]">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">WhatsApp Cliente (Opcional)</label>
+                                <input type="tel" id="inline-phone" placeholder="Ej. 2221234567"
+                                       class="w-full px-3.5 py-2.5 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl text-sm font-semibold text-[#0f2f4a] focus:outline-none focus:border-[#2573b3]">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">Paquete</label>
+                                <select id="inline-package" onchange="syncPackagePrice('inline')"
+                                        class="w-full px-3 py-2.5 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl text-xs sm:text-sm font-bold text-[#0f2f4a]"></select>
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="block text-xs font-extrabold uppercase text-[#2573b3]">Total ($ MXN)</label>
+                                    <button type="button" onclick="openPricingModal()"
+                                            class="text-[10px] font-extrabold text-[#2573b3] hover:text-[#0f2f4a] flex items-center gap-1 cursor-pointer"
+                                            title="Solo Administrador puede editar precios">
+                                        <i id="inline-price-lock-icon" class="fa-solid fa-lock text-amber-500"></i>
+                                        <span>Precios</span>
+                                    </button>
+                                </div>
+                                <input type="number" id="inline-price" min="0" step="5" required oninput="handleManualPriceInput('inline')"
+                                       class="w-full px-3 py-2.5 bg-[#eef6fc] border border-[#d2e3f0] rounded-xl font-mono-num text-sm font-extrabold text-[#2573b3]">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">Lavador Asignado</label>
+                                <select id="inline-washer"
+                                        class="w-full px-3 py-2.5 bg-[#fef9e7] border border-[#f5b82e] rounded-xl text-xs sm:text-sm font-bold text-[#0f2f4a]"></select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">Estado Inicial</label>
+                                <select id="inline-stage"
+                                        class="w-full px-3 py-2.5 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl text-sm font-bold text-[#0f2f4a]">
+                                    <option value="Lavando">Lavando (Inicia cronómetro)</option>
+                                    <option value="En Espera">En Espera</option>
+                                    <option value="Secado / Detallado">Secado / Detallado</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">Observación / Nota</label>
+                                <input type="text" id="inline-note" placeholder="Ej. Cera líquida en cofre y toldo"
+                                       class="w-full px-3.5 py-2.5 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl text-sm text-[#0f2f4a]">
+                            </div>
+                        </div>
+
+                        <!-- Campo de Fotografía desde Cámara del Dispositivo (Recepción) -->
+                        <div class="bg-[#f3f8fc] border border-[#d2e3f0] rounded-2xl p-3.5 space-y-2.5">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div>
+                                    <p class="text-xs font-extrabold uppercase text-[#2573b3]">
+                                        <i class="fa-solid fa-camera mr-1"></i>Foto desde Cámara del Dispositivo (Opcional)
+                                    </p>
+                                    <p class="text-[11px] text-slate-500">Abre la cámara trasera del dispositivo y se comprime automáticamente.</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button type="button" onclick="openLiveCamera('inline')"
+                                            class="px-3 py-1.5 rounded-xl bg-[#0f2f4a] hover:bg-[#2573b3] text-white text-xs font-extrabold flex items-center gap-1.5 cursor-pointer">
+                                        <i class="fa-solid fa-video text-[#f5b82e]"></i>
+                                        <span>Cámara en Vivo</span>
+                                    </button>
+                                    <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-white border border-[#cfe0ee] hover:bg-[#eaf3fb] text-xs font-extrabold text-[#0f2f4a] flex items-center gap-1.5">
+                                        <i class="fa-solid fa-camera text-[#2573b3]"></i>
+                                        <span>Tomar Foto</span>
+                                        <input type="file" id="inline-photo-input" accept="image/*" capture="environment" onchange="handleVehiclePhoto(event, 'inline')" class="sr-only">
+                                    </label>
+                                    <button type="button" id="inline-photo-clear-btn" onclick="clearVehiclePhoto('inline')"
+                                            class="hidden px-2.5 py-1.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs font-bold hover:bg-rose-100 cursor-pointer">
+                                        <i class="fa-solid fa-trash mr-1"></i>Quitar
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Vista previa en vivo de cámara (Recepción) -->
+                            <div id="inline-live-camera-box" class="hidden bg-[#092238] rounded-2xl p-2.5 space-y-2">
+                                <video id="inline-live-video" autoplay playsinline muted class="w-full max-h-52 rounded-xl object-cover bg-black"></video>
+                                <div class="flex items-center justify-end gap-2">
+                                    <button type="button" onclick="stopLiveCamera('inline')"
+                                            class="px-3 py-1.5 rounded-xl bg-slate-700 text-white text-xs font-bold cursor-pointer">
+                                        Cerrar Cámara
+                                    </button>
+                                    <button type="button" onclick="captureLiveCameraPhoto('inline')"
+                                            class="px-4 py-1.5 rounded-xl bg-[#f5b82e] text-[#0f2f4a] text-xs font-extrabold cursor-pointer">
+                                        <i class="fa-solid fa-camera mr-1"></i>Capturar Foto
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Vista previa de foto capturada (Recepción) -->
+                            <div id="inline-photo-preview-wrap" class="hidden pt-1 flex items-center gap-3">
+                                <img id="inline-photo-preview" src="" alt="Vista previa recepción"
+                                     class="w-24 h-16 rounded-xl object-cover border border-[#cfe0ee] bg-white">
+                                <span class="text-xs font-bold text-emerald-700">
+                                    <i class="fa-solid fa-circle-check mr-1"></i>Foto lista para adjuntar
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="pt-1 flex justify-end">
+                            <button type="submit"
+                                    class="px-6 py-2.5 rounded-xl bg-[#f5b82e] hover:bg-[#e5a81e] text-[#0f2f4a] font-extrabold text-sm shadow-sm cursor-pointer">
+                                <i class="fa-solid fa-plus mr-1.5"></i>Enviar Auto a Patio
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Columna Derecha: Caja, Lavadores y Precios de Servicios (Admin) -->
+                <div class="lg:col-span-5 space-y-4">
+                    <div class="bg-white rounded-2xl border border-[#d7e6f3] p-5 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-brand text-lg text-[#0f2f4a]">Caja del Turno</h3>
+                            <span id="cash-net-badge" class="font-mono-num px-3 py-1 rounded-full bg-[#dff7ec] text-[#0f9d58] text-xs font-extrabold">
+                                Neto: $0.00
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-[#f3f8fc] rounded-xl p-2.5 border border-[#d9e6f2]">
+                                <p class="text-[10px] font-bold uppercase text-slate-500">Cobrado</p>
+                                <p id="cash-collected" class="font-mono-num text-sm font-extrabold text-[#0f2f4a] mt-0.5">$0.00</p>
+                            </div>
+                            <div class="bg-[#fef2f2] rounded-xl p-2.5 border border-[#fecdd3]">
+                                <p class="text-[10px] font-bold uppercase text-rose-600">Gastos</p>
+                                <p id="cash-expenses" class="font-mono-num text-sm font-extrabold text-rose-600 mt-0.5">$0.00</p>
+                            </div>
+                            <div class="bg-[#fef9e7] rounded-xl p-2.5 border border-[#fde68a]">
+                                <p class="text-[10px] font-bold uppercase text-[#92400e]">Por Cobrar</p>
+                                <p id="cash-pending" class="font-mono-num text-sm font-extrabold text-[#92400e] mt-0.5">$0.00</p>
+                            </div>
+                        </div>
+
+                        <form onsubmit="handleAddExpense(event)" class="flex gap-2 pt-1">
+                            <input type="text" id="expense-desc" required placeholder="Gasto (ej. Shampoo, propina)"
+                                   class="flex-1 px-3 py-2 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl text-xs font-medium text-[#0f2f4a]">
+                            <input type="number" id="expense-amount" required min="1" step="1" placeholder="$"
+                                   class="w-20 px-2.5 py-2 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl font-mono-num text-xs font-extrabold text-[#0f2f4a]">
+                            <button type="submit" class="px-3.5 py-2 rounded-xl bg-[#0f2f4a] text-white text-xs font-extrabold cursor-pointer">
+                                Gasto
+                            </button>
+                        </form>
+                        <div id="expenses-list" class="max-h-28 overflow-y-auto space-y-1.5 text-xs"></div>
+                    </div>
+
+                    <!-- Lavadores -->
+                    <div class="bg-white rounded-2xl border border-[#d7e6f3] p-5 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-brand text-base text-[#0f2f4a]">Lavadores en Patio</h3>
+                            <form onsubmit="handleAddWasher(event)" class="flex gap-1.5">
+                                <input type="text" id="new-washer-name" required placeholder="Nuevo lavador..."
+                                       class="w-32 px-2.5 py-1 bg-[#f3f8fc] border border-[#d2e3f0] rounded-lg text-xs">
+                                <button type="submit" class="px-2.5 py-1 bg-[#0f2f4a] text-white rounded-lg text-xs font-bold cursor-pointer">+</button>
+                            </form>
+                        </div>
+                        <div id="washers-summary-list" class="space-y-2"></div>
+                    </div>
+
+                    <!-- Tarifas de Servicios (Solo Admin autenticado edita) -->
+                    <div class="bg-white rounded-2xl border border-[#d7e6f3] p-5 space-y-3">
+                        <div class="flex items-center justify-between border-b border-[#edf4fa] pb-2.5">
+                            <div>
+                                <h3 class="font-brand text-base text-[#0f2f4a] flex items-center gap-2">
+                                    <i class="fa-solid fa-tags text-[#f5b82e]"></i> Precios de Servicios
+                                </h3>
+                                <p id="pricing-access-hint" class="text-[11px] text-slate-500">
+                                    Solo el Administrador autenticado puede editar precios.
+                                </p>
+                            </div>
+                            <button type="button" onclick="openPricingModal()"
+                                    class="px-3 py-1.5 rounded-xl bg-[#0f2f4a] hover:bg-[#2573b3] text-white text-xs font-extrabold flex items-center gap-1.5 cursor-pointer">
+                                <i id="pricing-card-lock-icon" class="fa-solid fa-lock text-[#f5b82e]"></i>
+                                <span>Editar</span>
+                            </button>
+                        </div>
+                        <div id="packages-readonly-list" class="space-y-1.5"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ===================================================================== -->
+    <!-- MODALES                                                               -->
+    <!-- ===================================================================== -->
+
+    <!-- MODAL 1: + NUEVO AUTO (Incluye Foto desde Cámara del Dispositivo) -->
+    <div id="modal-new-vehicle" class="fixed inset-0 bg-[#092238]/60 z-40 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-[#d7e6f3]">
+            <div class="bg-[#0f2f4a] text-white px-6 py-4 flex items-center justify-between border-b-2 border-[#f5b82e]">
+                <h3 class="font-brand text-xl text-white flex items-center gap-2">
+                    <i class="fa-solid fa-car-side text-[#f5b82e]"></i> Registrar Nuevo Auto en Patio
+                </h3>
+                <button type="button" onclick="closeNewVehicleModal()" class="text-[#b6d5ea] hover:text-white cursor-pointer">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleModalRegister(event)" class="p-5 sm:p-6 space-y-3.5 max-h-[85vh] overflow-y-auto">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">Placa *</label>
+                        <input type="text" id="modal-plate" required maxlength="12" placeholder="Ej. PUE-910-C"
+                               class="w-full px-3.5 py-2.5 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl font-mono-num text-sm font-extrabold uppercase text-[#0f2f4a]">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">Vehículo y Color *</label>
+                        <input type="text" id="modal-model" required placeholder="Ej. Honda CR-V Azul Marino"
+                               class="w-full px-3.5 py-2.5 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl text-sm font-semibold text-[#0f2f4a]">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">Nombre del Cliente *</label>
+                        <input type="text" id="modal-client" required placeholder="Ej. Ana Sofía Ruiz"
+                               class="w-full px-3.5 py-2.5 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl text-sm font-semibold text-[#0f2f4a]">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">WhatsApp Cliente (Opcional)</label>
+                        <input type="tel" id="modal-phone" placeholder="Ej. 2221234567"
+                               class="w-full px-3.5 py-2.5 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl text-sm font-semibold text-[#0f2f4a]">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">Paquete</label>
+                        <select id="modal-package" onchange="syncPackagePrice('modal')"
+                                class="w-full px-3 py-2.5 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl text-xs font-bold text-[#0f2f4a]"></select>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-extrabold uppercase text-[#2573b3]">Total ($ MXN)</label>
+                            <button type="button" onclick="openPricingModal()"
+                                    class="text-[10px] font-extrabold text-[#2573b3] hover:text-[#0f2f4a] flex items-center gap-1 cursor-pointer"
+                                    title="Solo Administrador puede editar precios">
+                                <i id="modal-price-lock-icon" class="fa-solid fa-lock text-amber-500"></i>
+                                <span>Precios</span>
+                            </button>
+                        </div>
+                        <input type="number" id="modal-price" min="0" step="5" required oninput="handleManualPriceInput('modal')"
+                               class="w-full px-3 py-2.5 bg-[#eef6fc] border border-[#d2e3f0] rounded-xl font-mono-num text-sm font-extrabold text-[#2573b3]">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">Lavador</label>
+                        <select id="modal-washer"
+                                class="w-full px-3 py-2.5 bg-[#fef9e7] border border-[#f5b82e] rounded-xl text-xs font-bold text-[#0f2f4a]"></select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">Estado Inicial</label>
+                        <select id="modal-stage"
+                                class="w-full px-3 py-2.5 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl text-xs sm:text-sm font-bold text-[#0f2f4a]">
+                            <option value="Lavando">Lavando (En proceso)</option>
+                            <option value="En Espera">En Espera</option>
+                            <option value="Secado / Detallado">Secado / Detallado</option>
+                        </select>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-extrabold uppercase text-[#2573b3]">Cámara del Dispositivo</label>
+                            <button type="button" id="modal-photo-clear-btn" onclick="clearVehiclePhoto('modal')"
+                                    class="hidden text-[10px] font-extrabold text-rose-600 hover:underline cursor-pointer">
+                                <i class="fa-solid fa-xmark mr-0.5"></i>Quitar
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" onclick="openLiveCamera('modal')"
+                                    class="px-2.5 py-2 rounded-xl bg-[#0f2f4a] hover:bg-[#2573b3] text-white text-[11px] font-extrabold flex items-center gap-1 shrink-0 cursor-pointer">
+                                <i class="fa-solid fa-video text-[#f5b82e]"></i>
+                                <span>Vivo</span>
+                            </button>
+                            <label class="flex-1 cursor-pointer px-2.5 py-2 rounded-xl bg-[#eef6fc] hover:bg-[#dfeffc] border border-[#d2e3f0] text-[#2573b3] text-[11px] font-extrabold flex items-center justify-center gap-1.5 truncate">
+                                <i class="fa-solid fa-camera"></i>
+                                <span>Abrir Cámara</span>
+                                <input type="file" id="modal-photo-input" accept="image/*" capture="environment" onchange="handleVehiclePhoto(event, 'modal')" class="sr-only">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vista previa en vivo de cámara (Modal + Nuevo Auto) -->
+                <div id="modal-live-camera-box" class="hidden bg-[#092238] rounded-2xl p-2.5 space-y-2">
+                    <video id="modal-live-video" autoplay playsinline muted class="w-full max-h-48 rounded-xl object-cover bg-black"></video>
+                    <div class="flex items-center justify-end gap-2">
+                        <button type="button" onclick="stopLiveCamera('modal')"
+                                class="px-3 py-1.5 rounded-xl bg-slate-700 text-white text-xs font-bold cursor-pointer">
+                            Cerrar Cámara
+                        </button>
+                        <button type="button" onclick="captureLiveCameraPhoto('modal')"
+                                class="px-4 py-1.5 rounded-xl bg-[#f5b82e] text-[#0f2f4a] text-xs font-extrabold cursor-pointer">
+                            <i class="fa-solid fa-camera mr-1"></i>Capturar Foto
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Vista previa de foto capturada en Modal + Nuevo Auto -->
+                <div id="modal-photo-preview-wrap" class="hidden bg-[#f3f8fc] border border-[#d2e3f0] rounded-2xl p-2.5 flex items-center gap-3">
+                    <img id="modal-photo-preview" src="" alt="Vista previa del auto"
+                         class="w-20 h-14 rounded-xl object-cover border border-[#cfe0ee] bg-white">
+                    <div class="text-xs">
+                        <p class="font-extrabold text-[#0f2f4a]">Foto de recepción adjunta</p>
+                        <p class="text-[11px] text-slate-500">Se comprimirá y mostrará en la tarjeta, visor y ticket.</p>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">Observación / Nota Especial</label>
+                    <input type="text" id="modal-note" placeholder="Ej. Aspirado profundo en cajuela"
+                           class="w-full px-3.5 py-2.5 bg-[#fef9e7] border border-[#fde68a] rounded-xl text-sm text-[#0f2f4a]">
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2 border-t border-slate-100">
+                    <button type="button" onclick="closeNewVehicleModal()"
+                            class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                            class="px-6 py-2.5 rounded-xl bg-[#f5b82e] hover:bg-[#e5a81e] text-[#0f2f4a] font-extrabold text-xs sm:text-sm shadow cursor-pointer">
+                        Registrar en Patio
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: CAMBIAR LAVADOR -->
+    <div id="modal-change-washer" class="fixed inset-0 bg-[#092238]/60 z-40 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl border border-[#d7e6f3]">
+            <div class="bg-[#0f2f4a] text-white px-5 py-4 flex items-center justify-between">
+                <h3 class="font-brand text-lg text-white">Asignar Lavador</h3>
+                <button type="button" onclick="closeModal('modal-change-washer')" class="text-[#b6d5ea] hover:text-white cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="washer-options-list" class="p-4 space-y-2"></div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: COBRO Y ENTREGA -->
+    <div id="modal-checkout" class="fixed inset-0 bg-[#092238]/60 z-40 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-[#d7e6f3]">
+            <div class="bg-[#0f2f4a] text-white px-5 py-4 flex items-center justify-between border-b-2 border-[#f5b82e]">
+                <h3 class="font-brand text-xl text-white">Cobrar y Entregar Auto</h3>
+                <button type="button" onclick="closeModal('modal-checkout')" class="text-[#b6d5ea] hover:text-white cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form onsubmit="confirmCheckout(event)" class="p-5 space-y-4">
+                <div id="checkout-summary-box" class="bg-[#f3f8fc] rounded-2xl p-4 border border-[#d2e3f0] space-y-1"></div>
+                <div>
+                    <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">Método de Pago</label>
+                    <select id="checkout-method" class="w-full px-3.5 py-2.5 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl text-sm font-bold text-[#0f2f4a]">
+                        <option value="Efectivo">Efectivo</option>
+                        <option value="Transferencia">Transferencia</option>
+                        <option value="Tarjeta">Tarjeta</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('modal-checkout')" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer">Cancelar</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-[#0f9d58] hover:bg-emerald-700 text-white text-xs font-extrabold shadow cursor-pointer">
+                        Confirmar Cobro y Entregar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 4: TICKET DE SERVICIO -->
+    <div id="modal-ticket" class="fixed inset-0 bg-[#092238]/60 z-40 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl border border-[#d7e6f3]">
+            <div class="bg-[#0f2f4a] text-white px-5 py-3.5 flex items-center justify-between">
+                <h3 class="font-brand text-lg text-white">Ticket de Servicio</h3>
+                <button type="button" onclick="closeModal('modal-ticket')" class="text-[#b6d5ea] hover:text-white cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div id="ticket-printable-area" class="bg-[#f8fbff] border border-dashed border-[#2573b3] rounded-2xl p-4 text-xs text-[#0f2f4a] space-y-2"></div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="window.print()" class="py-2.5 px-3 rounded-xl bg-[#0f2f4a] text-white text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-print"></i> Imprimir
+                    </button>
+                    <button type="button" onclick="sendWhatsAppFromTicket()" class="py-2.5 px-3 rounded-xl bg-[#25d366] text-white text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer">
+                        <i class="fa-brands fa-whatsapp text-sm"></i> WhatsApp
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: VISOR AMPLIADO DE PLACA / FOTO -->
+    <div id="modal-plate-zoom" class="fixed inset-0 bg-[#092238]/75 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-[#d7e6f3]">
+            <div class="bg-[#0f2f4a] text-white px-5 py-3.5 flex items-center justify-between">
+                <h3 id="zoom-title" class="font-brand text-lg text-white">Placa y Evidencia</h3>
+                <button type="button" onclick="closeModal('modal-plate-zoom')" class="text-[#b6d5ea] hover:text-white cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="zoom-content" class="p-5 flex flex-col items-center justify-center gap-3"></div>
+        </div>
+    </div>
+
+    <!-- MODAL 6: PERSONALIZAR MARCA Y LOGO -->
+    <div id="modal-branding" class="fixed inset-0 bg-[#092238]/60 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-[#d7e6f3]">
+            <div class="bg-[#0f2f4a] text-white px-5 py-4 flex items-center justify-between">
+                <h3 class="font-brand text-xl text-white">Personalizar Marca y Logo</h3>
+                <button type="button" onclick="closeModal('modal-branding')" class="text-[#b6d5ea] hover:text-white cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">Nombre del Autolavado</label>
+                    <input type="text" id="branding-name-input" maxlength="30"
+                           class="w-full px-3.5 py-2.5 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl text-sm font-bold text-[#0f2f4a]">
+                </div>
+                <div>
+                    <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">Subir Logotipo (Opcional)</label>
+                    <input type="file" id="branding-file-input" accept="image/*" onchange="handleBrandFile(event)"
+                           class="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#eef6fc] file:text-[#2573b3]">
+                </div>
+                <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                    <button type="button" onclick="resetDefaultLogo()" class="text-xs font-bold text-rose-600 hover:underline cursor-pointer">
+                        Restaurar logo original
+                    </button>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="closeModal('modal-branding')" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer">Cancelar</button>
+                        <button type="button" onclick="saveBranding()" class="px-4 py-2 rounded-xl bg-[#f5b82e] text-[#0f2f4a] text-xs font-extrabold cursor-pointer">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 7: INICIO DE SESIÓN DE ADMINISTRADOR (PIN) -->
+    <div id="modal-admin-login" class="fixed inset-0 bg-[#092238]/65 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl border border-[#d7e6f3]">
+            <div class="bg-[#0f2f4a] text-white px-5 py-4 flex items-center justify-between border-b-2 border-[#f5b82e]">
+                <h3 class="font-brand text-lg text-white flex items-center gap-2">
+                    <i class="fa-solid fa-user-shield text-[#f5b82e]"></i> Acceso Administrador
+                </h3>
+                <button type="button" onclick="cancelAdminLogin()" class="text-[#b6d5ea] hover:text-white cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form onsubmit="handleAdminLoginSubmit(event)" class="p-5 space-y-4">
+                <p id="admin-login-reason" class="text-xs text-slate-600">
+                    Ingresa el PIN de Administrador para editar precios de servicios.
+                </p>
+                <div>
+                    <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">PIN de Administrador</label>
+                    <input type="password" id="admin-pin-input" required maxlength="12" inputmode="numeric"
+                           placeholder="PIN (por defecto: 1234)"
+                           class="w-full px-3.5 py-2.5 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl font-mono-num text-base font-extrabold tracking-widest text-[#0f2f4a] focus:outline-none focus:border-[#2573b3]">
+                </div>
+                <p id="admin-login-error" class="hidden text-xs font-bold text-rose-600">
+                    <i class="fa-solid fa-circle-exclamation mr-1"></i>PIN incorrecto. Intenta de nuevo.
+                </p>
+                <div class="flex justify-end gap-2 pt-1">
+                    <button type="button" onclick="cancelAdminLogin()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-[#f5b82e] hover:bg-[#e5a81e] text-[#0f2f4a] text-xs font-extrabold shadow cursor-pointer">
+                        Entrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 8: EDITOR DE PRECIOS DE SERVICIOS (SOLO ADMINISTRADOR AUTENTICADO) -->
+    <div id="modal-pricing-editor" class="fixed inset-0 bg-[#092238]/65 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-[#d7e6f3]">
+            <div class="bg-[#0f2f4a] text-white px-5 py-4 flex items-center justify-between border-b-2 border-[#f5b82e]">
+                <h3 class="font-brand text-lg text-white flex items-center gap-2">
+                    <i class="fa-solid fa-tags text-[#f5b82e]"></i> Precios de Servicios
+                </h3>
+                <button type="button" onclick="closeModal('modal-pricing-editor')" class="text-[#b6d5ea] hover:text-white cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form onsubmit="saveServicePrices(event)" class="p-5 space-y-4 max-h-[85vh] overflow-y-auto">
+                <div class="bg-[#fef9e7] border border-[#fde68a] rounded-2xl px-3.5 py-2 text-[11px] text-[#0f2f4a] flex items-center justify-between">
+                    <span><i class="fa-solid fa-shield-check text-emerald-600 mr-1"></i>Sesión Administrador activa</span>
+                    <button type="button" onclick="lockAdminSession()" class="font-extrabold text-rose-600 hover:underline cursor-pointer">
+                        Bloquear
+                    </button>
+                </div>
+
+                <div id="pricing-editor-rows" class="space-y-2.5"></div>
+
+                <div class="border-t border-slate-100 pt-3">
+                    <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">Cambiar PIN Admin (Opcional)</label>
+                    <input type="text" id="new-admin-pin-input" maxlength="12" placeholder="Dejar vacío para mantener PIN actual"
+                           class="w-full px-3 py-2 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl font-mono-num text-xs font-bold text-[#0f2f4a]">
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('modal-pricing-editor')" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-[#0f9d58] hover:bg-emerald-700 text-white text-xs font-extrabold shadow cursor-pointer">
+                        Guardar Precios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast discreto -->
+    <div id="toast-banner" class="fixed bottom-5 right-5 z-50 hidden px-4 py-2.5 rounded-2xl shadow-lg text-xs font-extrabold text-white bg-[#0f2f4a] border border-[#f5b82e]"></div>
+
+    <!-- ===================================================================== -->
+    <!-- LÓGICA DE APLICACIÓN                                                  -->
+    <!-- ===================================================================== -->
+    <script>
+        const STORAGE_KEY = 'el_champusito_operacion_v3';
+
+        let activeFilter = 'TODOS';
+        let editingWasherForId = null;
+        let checkoutTargetId = null;
+        let currentTicketVehicle = null;
+        let uploadedModalPhoto = null;
+        let uploadedInlinePhoto = null;
+        let activeCameraStream = null;
+        let activeCameraPrefix = null;
+        let pendingBrandLogo = null;
+        let pendingAdminCallback = null;
+
+        const DEFAULT_PACKAGES = [
+            { id: 'pkg-enc', name: 'Lavado + Encerado', price: 280, estMinutes: 60 },
+            { id: 'pkg-comp', name: 'Lavado Completo', price: 180, estMinutes: 45 },
+            { id: 'pkg-exp', name: 'Lavado Express', price: 120, estMinutes: 30 },
+            { id: 'pkg-det', name: 'Detallado Interior', price: 450, estMinutes: 90 }
+        ];
+
+        function createInitialState() {
+            const now = Date.now();
+            return {
+                branding: {
+                    name: 'El Champusito',
+                    logoDataUrl: null
+                },
+                currentRole: 'Administrador',
+                adminPin: '1234',
+                adminAuthenticated: false,
+                washers: ['Carlos', 'Miguel', 'Javier'],
+                packages: DEFAULT_PACKAGES.map(p => ({ ...p })),
+                vehicles: [
+                    {
+                        id: 'v-1',
+                        plate: 'UAY-482-B',
+                        model: 'Volkswagen Jetta Blanco',
+                        client: 'Carlos Mendoza',
+                        phone: '',
+                        packageName: 'Lavado + Encerado',
+                        price: 280,
+                        washer: 'Carlos',
+                        stage: 'Lavando',
+                        note: 'Cera líquida en cofre y toldo',
+                        photo: null,
+                        entryTime: now - 53 * 60 * 1000,
+                        estimatedDurationMs: (6 * 60 + 39) * 1000,
+                        paid: false,
+                        paymentMethod: null
+                    },
+                    {
+                        id: 'v-2',
+                        plate: 'PUE-910-C',
+                        model: 'Honda CR-V Azul Marino',
+                        client: 'Ana Sofía Ruiz',
+                        phone: '',
+                        packageName: 'Lavado Completo',
+                        price: 180,
+                        washer: 'Miguel',
+                        stage: 'Secado / Detallado',
+                        note: 'Aspirado profundo en cajuela',
+                        photo: null,
+                        entryTime: now - 71 * 60 * 1000,
+                        estimatedDurationMs: -26 * 60 * 1000 - 20 * 1000,
+                        paid: false,
+                        paymentMethod: null
+                    },
+                    {
+                        id: 'v-3',
+                        plate: 'TLA-305-A',
+                        model: 'Seat Ibiza Rojo',
+                        client: 'Roberto Gómez',
+                        phone: '',
+                        packageName: 'Lavado Express',
+                        price: 120,
+                        washer: 'Javier',
+                        stage: 'Lavando',
+                        note: 'Cliente espera en sala',
+                        photo: null,
+                        entryTime: now - 73 * 60 * 1000,
+                        estimatedDurationMs: -43 * 60 * 1000 - 20 * 1000,
+                        paid: false,
+                        paymentMethod: null
+                    },
+                    {
+                        id: 'v-4',
+                        plate: 'MEX-714-D',
+                        model: 'Mazda CX-30 Gris',
+                        client: 'Lucía Fernández',
+                        phone: '',
+                        packageName: 'Lavado + Encerado',
+                        price: 280,
+                        washer: 'Carlos',
+                        stage: 'Listo para Entrega',
+                        note: 'Llantas abrillantadas y tapetes limpios',
+                        photo: null,
+                        entryTime: now - 55 * 60 * 1000,
+                        estimatedDurationMs: 18 * 60 * 1000,
+                        paid: false,
+                        paymentMethod: null
+                    }
+                ],
+                expenses: []
+            };
+        }
+
+        function loadState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return createInitialState();
+                const parsed = JSON.parse(raw);
+                const base = createInitialState();
+                return {
+                    ...base,
+                    ...parsed,
+                    branding: { ...base.branding, ...(parsed.branding || {}) },
+                    adminPin: parsed.adminPin ? String(parsed.adminPin) : '1234',
+                    adminAuthenticated: Boolean(parsed.adminAuthenticated),
+                    washers: Array.isArray(parsed.washers) && parsed.washers.length ? parsed.washers : base.washers,
+                    packages: Array.isArray(parsed.packages) && parsed.packages.length ? parsed.packages : base.packages,
+                    vehicles: Array.isArray(parsed.vehicles) ? parsed.vehicles : base.vehicles,
+                    expenses: Array.isArray(parsed.expenses) ? parsed.expenses : []
+                };
+            } catch (_e) {
+                return createInitialState();
+            }
+        }
+
+        let appState = loadState();
+
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+            } catch (_e) {
+                showToast('Espacio local lleno: intenta quitar alguna foto.', 'error');
+            }
+        }
+
+        // Utilidades
+        function escapeHtml(str) {
+            return String(str ?? '').replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[m]));
+        }
+
+        function formatMoney(num) {
+            return '$' + Number(num || 0).toFixed(2);
+        }
+
+        function formatTime12h(ts) {
+            const d = new Date(ts);
+            let h = d.getHours();
+            const m = String(d.getMinutes()).padStart(2, '0');
+            const ampm = h >= 12 ? 'p.m.' : 'a.m.';
+            h = h % 12;
+            if (h === 0) h = 12;
+            return `${String(h).padStart(2, '0')}:${m} ${ampm}`;
+        }
+
+        function formatSignedTimer(secondsFloat) {
+            const totalSec = Math.floor(Math.abs(secondsFloat));
+            const mins = Math.floor(totalSec / 60);
+            const secs = totalSec % 60;
+            const mmss = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            return secondsFloat >= 0 ? `QUEDAN ${mmss}` : `RETRASO +${mmss}`;
+        }
+
+        function showToast(msg, type = 'info') {
+            const el = document.getElementById('toast-banner');
+            if (!el) return;
+            el.textContent = msg;
+            el.className = 'fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-2xl shadow-lg text-xs font-extrabold text-white border ' + (
+                type === 'error'
+                    ? 'bg-rose-600 border-rose-200'
+                    : type === 'success'
+                        ? 'bg-[#0f9d58] border-emerald-200'
+                        : 'bg-[#0f2f4a] border-[#f5b82e]'
+            );
+            el.classList.remove('hidden');
+            clearTimeout(window.__toastTimer);
+            window.__toastTimer = setTimeout(() => el.classList.add('hidden'), 2600);
+        }
+
+        function openModal(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.remove('hidden');
+            el.classList.add('flex');
+        }
+
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('hidden');
+            el.classList.remove('flex');
+        }
+
+        // Reloj en vivo
+        function updateClock() {
+            const now = new Date();
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            const ss = String(now.getSeconds()).padStart(2, '0');
+            const clockEl = document.getElementById('live-clock');
+            if (clockEl) clockEl.textContent = `${hh}:${mm}:${ss}`;
+
+            const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            const dateEl = document.getElementById('live-date');
+            if (dateEl) {
+                dateEl.textContent = `${days[now.getDay()]} ${now.getDate()} De ${months[now.getMonth()]}`;
+            }
+        }
+
+        // Navegación
+        function switchView(viewName) {
+            stopLiveCamera();
+            const patioSec = document.getElementById('view-patio');
+            const recSec = document.getElementById('view-recepcion');
+            const btnPatio = document.getElementById('nav-btn-patio');
+            const btnRec = document.getElementById('nav-btn-recepcion');
+
+            if (viewName === 'recepcion') {
+                patioSec.classList.add('hidden');
+                recSec.classList.remove('hidden');
+                btnRec.className = 'px-3.5 py-1.5 rounded-xl bg-[#2573b3] text-white text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer';
+                btnPatio.className = 'px-3.5 py-1.5 rounded-xl text-[#b6d5ea] hover:text-white hover:bg-[#133b5c] text-xs font-bold flex items-center gap-2 transition-all cursor-pointer';
+                populateFormSelects();
+                renderCashAndRecepcion();
+            } else {
+                recSec.classList.add('hidden');
+                patioSec.classList.remove('hidden');
+                btnPatio.className = 'px-3.5 py-1.5 rounded-xl bg-[#2573b3] text-white text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer';
+                btnRec.className = 'px-3.5 py-1.5 rounded-xl text-[#b6d5ea] hover:text-white hover:bg-[#133b5c] text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer';
+                renderPatio();
+            }
+        }
+
+        // Rol y Sesión de Administrador (PIN)
+        function isAdminLoggedIn() {
+            return Boolean(appState.adminAuthenticated);
+        }
+
+        function toggleRoleDropdown() {
+            const menu = document.getElementById('role-dropdown-menu');
+            if (menu) menu.classList.toggle('hidden');
+        }
+
+        document.addEventListener('click', function (e) {
+            const switcher = document.getElementById('role-switcher-btn');
+            const menu = document.getElementById('role-dropdown-menu');
+            if (menu && switcher && !switcher.contains(e.target) && !menu.contains(e.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        function selectRole(role) {
+            appState.currentRole = role;
+            saveState();
+            updateRoleUI();
+            document.getElementById('role-dropdown-menu')?.classList.add('hidden');
+            showToast(`Perfil activo: ${role}`, 'info');
+        }
+
+        function updateRoleUI() {
+            document.getElementById('current-role-label').textContent = appState.currentRole || 'Administrador';
+            const authed = isAdminLoggedIn();
+
+            const checkAdmin = document.getElementById('check-role-Administrador');
+            if (checkAdmin) {
+                checkAdmin.style.visibility = appState.currentRole === 'Administrador' ? 'visible' : 'hidden';
+            }
+
+            const headerLock = document.getElementById('header-admin-lock-icon');
+            if (headerLock) {
+                headerLock.className = authed
+                    ? 'fa-solid fa-lock-open text-[10px] text-emerald-300'
+                    : 'fa-solid fa-lock text-[10px] text-[#f5b82e]';
+            }
+
+            const pinBadge = document.getElementById('admin-pin-status-badge');
+            if (pinBadge) {
+                pinBadge.textContent = authed ? '(Sesión activa)' : '(PIN)';
+                pinBadge.className = authed ? 'ml-1 text-[10px] font-mono text-emerald-600' : 'ml-1 text-[10px] font-mono text-amber-600';
+            }
+
+            const menuLockText = document.getElementById('menu-admin-lock-text');
+            if (menuLockText) {
+                menuLockText.textContent = authed ? 'Bloquear Sesión Admin' : 'Iniciar Sesión Admin';
+            }
+
+            ['modal-price-lock-icon', 'inline-price-lock-icon', 'pricing-card-lock-icon'].forEach(id => {
+                const icon = document.getElementById(id);
+                if (!icon) return;
+                icon.className = authed
+                    ? 'fa-solid fa-lock-open text-emerald-600'
+                    : 'fa-solid fa-lock text-amber-500';
+            });
+
+            const listDiv = document.getElementById('dropdown-washers-list');
+            if (listDiv) {
+                listDiv.innerHTML = appState.washers.map(w => `
+                    <button type="button" onclick="selectRole('${escapeHtml(w)}')"
+                            class="w-full px-3.5 py-2 text-left text-xs font-bold hover:bg-[#f3f8fc] flex items-center justify-between cursor-pointer">
+                        <span><i class="fa-solid fa-user-gear text-[#f5b82e] mr-2"></i>Lavador: ${escapeHtml(w)}</span>
+                        <span style="visibility: ${appState.currentRole === w ? 'visible' : 'hidden'}" class="text-emerald-600">
+                            <i class="fa-solid fa-check"></i>
+                        </span>
+                    </button>
+                `).join('');
+            }
+        }
+
+        function handleAdminSessionMenuAction() {
+            if (isAdminLoggedIn()) {
+                lockAdminSession();
+            } else {
+                requestAdminAuth(null, 'Ingresa el PIN de Administrador para iniciar sesión y editar precios.');
+            }
+        }
+
+        function requestAdminAuth(onSuccess, reasonText) {
+            if (isAdminLoggedIn()) {
+                appState.currentRole = 'Administrador';
+                saveState();
+                updateRoleUI();
+                if (typeof onSuccess === 'function') onSuccess();
+                return;
+            }
+            pendingAdminCallback = typeof onSuccess === 'function' ? onSuccess : null;
+            document.getElementById('admin-login-reason').textContent =
+                reasonText || 'Ingresa el PIN de Administrador para editar precios de servicios.';
+            document.getElementById('admin-pin-input').value = '';
+            document.getElementById('admin-login-error').classList.add('hidden');
+            openModal('modal-admin-login');
+            setTimeout(() => document.getElementById('admin-pin-input')?.focus(), 70);
+        }
+
+        function handleAdminLoginSubmit(event) {
+            event.preventDefault();
+            const entered = document.getElementById('admin-pin-input').value.trim();
+            const expected = String(appState.adminPin || '1234');
+            if (entered === expected) {
+                appState.adminAuthenticated = true;
+                appState.currentRole = 'Administrador';
+                saveState();
+                updateRoleUI();
+                closeModal('modal-admin-login');
+                showToast('Sesión de Administrador iniciada.', 'success');
+                const cb = pendingAdminCallback;
+                pendingAdminCallback = null;
+                if (typeof cb === 'function') cb();
+            } else {
+                document.getElementById('admin-login-error').classList.remove('hidden');
+            }
+        }
+
+        function cancelAdminLogin() {
+            pendingAdminCallback = null;
+            closeModal('modal-admin-login');
+        }
+
+        function lockAdminSession() {
+            appState.adminAuthenticated = false;
+            saveState();
+            updateRoleUI();
+            renderCashAndRecepcion();
+            showToast('Sesión de Administrador cerrada.', 'info');
+        }
+
+        function handleManualPriceInput(prefix) {
+            if (!isAdminLoggedIn()) {
+                syncPackagePrice(prefix);
+                requestAdminAuth(null, 'Solo el Administrador autenticado puede modificar precios de servicios.');
+            }
+        }
+
+        function openPricingModal() {
+            requestAdminAuth(() => {
+                const rows = document.getElementById('pricing-editor-rows');
+                rows.innerHTML = appState.packages.map(pkg => `
+                    <div class="bg-[#f3f8fc] border border-[#d2e3f0] rounded-2xl p-3 flex items-center justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-xs font-extrabold text-[#0f2f4a] truncate">${escapeHtml(pkg.name)}</p>
+                            <p class="text-[10px] text-slate-500">Duración base: ${pkg.estMinutes} min</p>
+                        </div>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <span class="font-mono-num text-xs font-bold text-[#2573b3]">$</span>
+                            <input type="number" data-pkg-price-id="${pkg.id}" min="0" step="5" value="${Number(pkg.price) || 0}"
+                                   class="w-24 px-2.5 py-1.5 bg-white border border-[#d2e3f0] rounded-xl font-mono-num text-sm font-extrabold text-[#0f2f4a] text-right">
+                        </div>
+                    </div>
+                `).join('');
+                document.getElementById('new-admin-pin-input').value = '';
+                openModal('modal-pricing-editor');
+            }, 'Inicia sesión como Administrador para editar los precios de servicios.');
+        }
+
+        function saveServicePrices(event) {
+            event.preventDefault();
+            if (!isAdminLoggedIn()) {
+                closeModal('modal-pricing-editor');
+                requestAdminAuth(null, 'Se requiere sesión de Administrador para guardar cambios de precios.');
+                return;
+            }
+            document.querySelectorAll('[data-pkg-price-id]').forEach(inp => {
+                const id = inp.getAttribute('data-pkg-price-id');
+                const pkg = appState.packages.find(p => p.id === id);
+                if (pkg) pkg.price = Math.max(0, Number(inp.value) || 0);
+            });
+            const newPin = document.getElementById('new-admin-pin-input').value.trim();
+            if (newPin) appState.adminPin = newPin;
+            saveState();
+            closeModal('modal-pricing-editor');
+            populateFormSelects();
+            renderCashAndRecepcion();
+            showToast('Precios de servicios actualizados.', 'success');
+        }
+
+        // Marca y Logo
+        function applyBranding() {
+            const nameEl = document.getElementById('business-name-display');
+            if (nameEl) nameEl.textContent = appState.branding?.name || 'El Champusito';
+            document.title = `${appState.branding?.name || 'El Champusito'} - Gestión Operativa de Autolavado`;
+
+            const container = document.getElementById('header-logo-container');
+            if (!container) return;
+            if (appState.branding?.logoDataUrl) {
+                container.innerHTML = `<img src="${appState.branding.logoDataUrl}" alt="Logo" class="w-full h-full object-cover rounded-xl">`;
+            }
+        }
+
+        function openBrandingModal() {
+            pendingBrandLogo = null;
+            document.getElementById('branding-name-input').value = appState.branding?.name || 'El Champusito';
+            document.getElementById('branding-file-input').value = '';
+            openModal('modal-branding');
+        }
+
+        function handleBrandFile(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = new Image();
+                img.onload = () => {
+                    const c = document.createElement('canvas');
+                    c.width = 160;
+                    c.height = 160;
+                    c.getContext('2d').drawImage(img, 0, 0, 160, 160);
+                    pendingBrandLogo = c.toDataURL('image/png', 0.85);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetDefaultLogo() {
+            pendingBrandLogo = null;
+            appState.branding.logoDataUrl = null;
+            saveState();
+            location.reload();
+        }
+
+        function saveBranding() {
+            const nameVal = document.getElementById('branding-name-input').value.trim() || 'El Champusito';
+            appState.branding.name = nameVal;
+            if (pendingBrandLogo) appState.branding.logoDataUrl = pendingBrandLogo;
+            saveState();
+            applyBranding();
+            closeModal('modal-branding');
+            showToast('Marca actualizada.', 'success');
+        }
+
+        // Selects de paquetes y lavadores
+        function populateFormSelects() {
+            ['modal', 'inline'].forEach(prefix => {
+                const pkgSel = document.getElementById(`${prefix}-package`);
+                const washSel = document.getElementById(`${prefix}-washer`);
+                if (pkgSel) {
+                    const prev = pkgSel.value;
+                    pkgSel.innerHTML = appState.packages.map(p =>
+                        `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)} ($${p.price})</option>`
+                    ).join('');
+                    if (prev && appState.packages.some(p => p.name === prev)) pkgSel.value = prev;
+                }
+                if (washSel) {
+                    const prevW = washSel.value;
+                    washSel.innerHTML = appState.washers.map(w =>
+                        `<option value="${escapeHtml(w)}">${escapeHtml(w)}</option>`
+                    ).join('');
+                    if (prevW && appState.washers.includes(prevW)) washSel.value = prevW;
+                }
+                syncPackagePrice(prefix);
+            });
+        }
+
+        function syncPackagePrice(prefix) {
+            const pkgSel = document.getElementById(`${prefix}-package`);
+            const priceInp = document.getElementById(`${prefix}-price`);
+            if (!pkgSel || !priceInp) return;
+            const found = appState.packages.find(p => p.name === pkgSel.value);
+            if (found) priceInp.value = found.price;
+        }
+
+        // Fotografía desde cámara del dispositivo (compresión en canvas + vista previa + quitar)
+        function compressImageSource(sourceElement, srcW, srcH) {
+            const maxSide = 640;
+            let w = srcW || 640;
+            let h = srcH || 480;
+            if (w > h && w > maxSide) {
+                h = Math.round((h * maxSide) / w);
+                w = maxSide;
+            } else if (h > maxSide) {
+                w = Math.round((w * maxSide) / h);
+                h = maxSide;
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext('2d').drawImage(sourceElement, 0, 0, w, h);
+            return canvas.toDataURL('image/jpeg', 0.65);
+        }
+
+        function applyCompressedPhoto(prefix, compressedDataUrl) {
+            if (prefix === 'inline') uploadedInlinePhoto = compressedDataUrl;
+            else uploadedModalPhoto = compressedDataUrl;
+
+            const prevImg = document.getElementById(`${prefix}-photo-preview`);
+            const prevWrap = document.getElementById(`${prefix}-photo-preview-wrap`);
+            const clearBtn = document.getElementById(`${prefix}-photo-clear-btn`);
+            if (prevImg) prevImg.src = compressedDataUrl;
+            if (prevWrap) prevWrap.classList.remove('hidden');
+            if (clearBtn) clearBtn.classList.remove('hidden');
+        }
+
+        function handleVehiclePhoto(event, prefix) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            stopLiveCamera();
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = new Image();
+                img.onload = () => {
+                    const compressed = compressImageSource(img, img.width, img.height);
+                    applyCompressedPhoto(prefix, compressed);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function triggerNativeCameraFallback(prefix) {
+            const input = document.getElementById(`${prefix}-photo-input`);
+            if (input) input.click();
+        }
+
+        async function openLiveCamera(prefix) {
+            stopLiveCamera();
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                triggerNativeCameraFallback(prefix);
+                return;
+            }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: 'environment' } },
+                    audio: false
+                });
+                activeCameraStream = stream;
+                activeCameraPrefix = prefix;
+                const box = document.getElementById(`${prefix}-live-camera-box`);
+                const video = document.getElementById(`${prefix}-live-video`);
+                if (video && box) {
+                    video.srcObject = stream;
+                    box.classList.remove('hidden');
+                }
+            } catch (_err) {
+                triggerNativeCameraFallback(prefix);
+            }
+        }
+
+        function captureLiveCameraPhoto(prefix) {
+            const video = document.getElementById(`${prefix}-live-video`);
+            if (!video || !video.videoWidth || !video.videoHeight) {
+                stopLiveCamera(prefix);
+                triggerNativeCameraFallback(prefix);
+                return;
+            }
+            const compressed = compressImageSource(video, video.videoWidth, video.videoHeight);
+            applyCompressedPhoto(prefix, compressed);
+            stopLiveCamera(prefix);
+            showToast('Foto capturada desde la cámara.', 'success');
+        }
+
+        function stopLiveCamera(prefix) {
+            if (activeCameraStream) {
+                activeCameraStream.getTracks().forEach(t => t.stop());
+                activeCameraStream = null;
+            }
+            const targetPrefix = prefix || activeCameraPrefix;
+            if (targetPrefix) {
+                const box = document.getElementById(`${targetPrefix}-live-camera-box`);
+                const video = document.getElementById(`${targetPrefix}-live-video`);
+                if (video) video.srcObject = null;
+                if (box) box.classList.add('hidden');
+            }
+            activeCameraPrefix = null;
+        }
+
+        function clearVehiclePhoto(prefix) {
+            stopLiveCamera(prefix);
+            if (prefix === 'inline') uploadedInlinePhoto = null;
+            else uploadedModalPhoto = null;
+
+            const inp = document.getElementById(`${prefix}-photo-input`);
+            const prevImg = document.getElementById(`${prefix}-photo-preview`);
+            const prevWrap = document.getElementById(`${prefix}-photo-preview-wrap`);
+            const clearBtn = document.getElementById(`${prefix}-photo-clear-btn`);
+            if (inp) inp.value = '';
+            if (prevImg) prevImg.src = '';
+            if (prevWrap) prevWrap.classList.add('hidden');
+            if (clearBtn) clearBtn.classList.add('hidden');
+        }
+
+        function closeNewVehicleModal() {
+            stopLiveCamera('modal');
+            closeModal('modal-new-vehicle');
+        }
+
+        // Registro de vehículo
+        function createVehicleFromPrefix(prefix, photoData) {
+            const plate = document.getElementById(`${prefix}-plate`).value.trim().toUpperCase();
+            const model = document.getElementById(`${prefix}-model`).value.trim();
+            const client = document.getElementById(`${prefix}-client`).value.trim();
+            const phone = document.getElementById(`${prefix}-phone`).value.trim();
+            const pkgName = document.getElementById(`${prefix}-package`).value;
+            const pkgObj = appState.packages.find(p => p.name === pkgName) || appState.packages[0];
+            const price = Math.max(0, Number(document.getElementById(`${prefix}-price`).value) || pkgObj?.price || 180);
+            const washer = document.getElementById(`${prefix}-washer`).value || appState.washers[0];
+            const stage = document.getElementById(`${prefix}-stage`).value || 'Lavando';
+            const note = document.getElementById(`${prefix}-note`).value.trim();
+
+            return {
+                id: 'v-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+                plate,
+                model,
+                client,
+                phone,
+                packageName: pkgName,
+                price,
+                washer,
+                stage,
+                note,
+                photo: photoData || null,
+                entryTime: Date.now(),
+                estimatedDurationMs: (pkgObj?.estMinutes || 45) * 60 * 1000,
+                paid: false,
+                paymentMethod: null
+            };
+        }
+
+        function openNewVehicleModal() {
+            clearVehiclePhoto('modal');
+            document.getElementById('modal-plate').value = '';
+            document.getElementById('modal-model').value = '';
+            document.getElementById('modal-client').value = '';
+            document.getElementById('modal-phone').value = '';
+            document.getElementById('modal-note').value = '';
+            populateFormSelects();
+            openModal('modal-new-vehicle');
+        }
+
+        function handleModalRegister(event) {
+            event.preventDefault();
+            const car = createVehicleFromPrefix('modal', uploadedModalPhoto);
+            appState.vehicles.unshift(car);
+            clearVehiclePhoto('modal');
+            saveState();
+            closeNewVehicleModal();
+            renderPatio();
+            showToast(`Auto ${car.plate} registrado en patio.`, 'success');
+        }
+
+        function handleInlineRegister(event) {
+            event.preventDefault();
+            const car = createVehicleFromPrefix('inline', uploadedInlinePhoto);
+            appState.vehicles.unshift(car);
+            event.target.reset();
+            clearVehiclePhoto('inline');
+            populateFormSelects();
+            saveState();
+            switchView('patio');
+            showToast(`Auto ${car.plate} enviado a patio.`, 'success');
+        }
+
+        // Cálculo de tiempos y retrasos
+        function getRemainingSeconds(vehicle) {
+            const elapsedMs = Date.now() - Number(vehicle.entryTime || Date.now());
+            const remainingMs = Number(vehicle.estimatedDurationMs || 0) - elapsedMs;
+            return remainingMs / 1000;
+        }
+
+        function isDelayed(vehicle) {
+            if (vehicle.stage === 'Entregado' || vehicle.stage === 'Listo para Entrega') return false;
+            return getRemainingSeconds(vehicle) < 0;
+        }
+
+        // Filtros y KPIs
+        function setFilter(filterVal) {
+            activeFilter = filterVal;
+            document.querySelectorAll('.filter-pill').forEach(btn => {
+                const isActive = btn.getAttribute('data-filter') === filterVal;
+                btn.className = isActive
+                    ? 'filter-pill px-4 py-1.5 rounded-xl bg-[#0f2f4a] text-white text-xs font-extrabold transition-all cursor-pointer'
+                    : 'filter-pill px-3.5 py-1.5 rounded-xl bg-white text-[#2573b3] hover:bg-[#f5faff] text-xs font-bold border border-[#d6e5f2] transition-all cursor-pointer';
+            });
+            renderPatio();
+        }
+
+        function renderMiniPlateSVG(plate) {
+            const safe = escapeHtml(plate);
+            return `
+                <svg viewBox="0 0 112 64" class="w-[94px] h-[54px] rounded-xl border-2 border-[#0f2f4a] bg-white shrink-0">
+                    <rect x="0" y="0" width="112" height="14" fill="#2573b3"/>
+                    <text x="56" y="10" text-anchor="middle" fill="#ffffff" font-size="6.5" font-weight="800" font-family="Plus Jakarta Sans, sans-serif">
+                        EL CHAMPUSITO · PLACA
+                    </text>
+                    <text x="56" y="42" text-anchor="middle" fill="#0f2f4a" font-size="14.5" font-weight="800" font-family="JetBrains Mono, monospace">
+                        ${safe}
+                    </text>
+                    <rect x="6" y="50" width="100" height="8" rx="3" fill="#eaf3fb"/>
+                </svg>
+            `;
+        }
+
+        function renderPatio() {
+            const activeCars = appState.vehicles.filter(v => v.stage !== 'Entregado');
+            const esperaCount = activeCars.filter(v => v.stage === 'En Espera').length;
+            const lavandoCount = activeCars.filter(v => v.stage === 'Lavando' || v.stage === 'Secado / Detallado').length;
+            const listosCount = activeCars.filter(v => v.stage === 'Listo para Entrega').length;
+            const retrasoCount = activeCars.filter(v => isDelayed(v)).length;
+
+            document.getElementById('kpi-espera').textContent = esperaCount;
+            document.getElementById('kpi-lavando').textContent = lavandoCount;
+            document.getElementById('kpi-listos').textContent = listosCount;
+            document.getElementById('kpi-retraso').textContent = retrasoCount;
+            document.getElementById('header-patio-count').textContent = activeCars.length;
+
+            const query = (document.getElementById('search-input')?.value || '').trim().toLowerCase();
+
+            const filtered = activeCars.filter(v => {
+                if (activeFilter === 'RETRASO' && !isDelayed(v)) return false;
+                if (activeFilter !== 'TODOS' && activeFilter !== 'RETRASO' && v.stage !== activeFilter) return false;
+                if (query) {
+                    const hay = `${v.plate} ${v.model} ${v.client} ${v.washer} ${v.packageName}`.toLowerCase();
+                    if (!hay.includes(query)) return false;
+                }
+                return true;
+            });
+
+            const grid = document.getElementById('patio-cards-grid');
+            const emptyState = document.getElementById('patio-empty-state');
+
+            if (!filtered.length) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            grid.innerHTML = filtered.map(v => {
+                const remSec = getRemainingSeconds(v);
+                const delayed = isDelayed(v);
+                const estEndTime = Number(v.entryTime || Date.now()) + Number(v.estimatedDurationMs || 2700000);
+
+                const timerBadge = delayed
+                    ? `<span data-timer-id="${v.id}" class="font-mono-num px-3 py-1 rounded-full bg-[#fee2e2] text-[#dc2626] text-[11px] font-extrabold tracking-wide">
+                            ${formatSignedTimer(remSec)}
+                       </span>`
+                    : `<span data-timer-id="${v.id}" class="font-mono-num px-3 py-1 rounded-full bg-[#fef3c7] text-[#92400e] text-[11px] font-extrabold tracking-wide">
+                            ${formatSignedTimer(remSec)}
+                       </span>`;
+
+                const stageBadge = v.stage === 'Secado / Detallado'
+                    ? `<span class="px-3 py-1 rounded-full bg-[#0f2f4a] text-white text-[11px] font-extrabold">Secado / Detallado</span>`
+                    : v.stage === 'Listo para Entrega'
+                        ? `<span class="px-3 py-1 rounded-full bg-[#0f9d58] text-white text-[11px] font-extrabold">Listo para Entrega</span>`
+                        : v.stage === 'En Espera'
+                            ? `<span class="px-3 py-1 rounded-full bg-[#64748b] text-white text-[11px] font-extrabold">En Espera</span>`
+                            : `<span class="px-3 py-1 rounded-full bg-[#2573b3] text-white text-[11px] font-extrabold">Lavando</span>`;
+
+                let actionBtn = '';
+                if (v.stage === 'En Espera') {
+                    actionBtn = `
+                        <button type="button" onclick="advanceStage('${v.id}', 'Lavando')"
+                                class="flex-1 py-2.5 px-3 rounded-xl bg-[#0f2f4a] hover:bg-[#19476e] text-white text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer">
+                            <i class="fa-solid fa-forward-step text-[11px]"></i>
+                            <span>Pasar a: Lavando</span>
+                        </button>`;
+                } else if (v.stage === 'Lavando') {
+                    actionBtn = `
+                        <button type="button" onclick="advanceStage('${v.id}', 'Secado / Detallado')"
+                                class="flex-1 py-2.5 px-3 rounded-xl bg-[#0f2f4a] hover:bg-[#19476e] text-white text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer">
+                            <i class="fa-solid fa-forward-step text-[11px]"></i>
+                            <span>Pasar a: Secado / Detallado</span>
+                        </button>`;
+                } else if (v.stage === 'Secado / Detallado') {
+                    actionBtn = `
+                        <button type="button" onclick="advanceStage('${v.id}', 'Listo para Entrega')"
+                                class="flex-1 py-2.5 px-3 rounded-xl bg-[#0f2f4a] hover:bg-[#19476e] text-white text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer">
+                            <i class="fa-solid fa-forward-step text-[11px]"></i>
+                            <span>Pasar a: Listo para Entrega</span>
+                        </button>`;
+                } else {
+                    actionBtn = `
+                        <button type="button" onclick="openCheckoutModal('${v.id}')"
+                                class="flex-1 py-2.5 px-3 rounded-xl bg-[#0f9d58] hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer">
+                            <i class="fa-solid fa-cash-register text-[11px]"></i>
+                            <span>Cobrar y Entregar</span>
+                        </button>`;
+                }
+
+                return `
+                    <article class="bg-white rounded-3xl border border-[#d7e6f3] p-4 sm:p-5 flex flex-col justify-between gap-3.5 shadow-[0_2px_10px_rgba(15,47,74,0.03)]">
+                        <!-- Fila 1: Cronómetro + Etapa + Cerrar (x) -->
+                        <div class="flex items-center justify-between gap-2">
+                            ${timerBadge}
+                            <div class="flex items-center gap-2">
+                                ${stageBadge}
+                                <button type="button" onclick="removeVehicle('${v.id}')" title="Quitar de patio"
+                                        class="text-[#9fb8ce] hover:text-rose-600 p-1 transition-colors cursor-pointer">
+                                    <i class="fa-solid fa-xmark text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Fila 2: Miniatura Placa/Foto + Placa Oscura + Modelo + Cliente -->
+                        <div class="flex items-center gap-3.5">
+                            <div class="relative shrink-0">
+                                ${v.photo
+                                    ? `<img src="${v.photo}" alt="Foto ${escapeHtml(v.plate)}" class="w-[94px] h-[54px] rounded-xl object-cover border-2 border-[#0f2f4a] bg-white">`
+                                    : renderMiniPlateSVG(v.plate)}
+                                <button type="button" onclick="openPlateZoom('${v.id}')" title="Ampliar placa o foto"
+                                        class="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-[#0f2f4a] hover:bg-[#2573b3] text-white flex items-center justify-center text-[10px] shadow cursor-pointer">
+                                    <i class="fa-solid fa-expand"></i>
+                                </button>
+                            </div>
+                            <div class="min-w-0">
+                                <span class="inline-block font-mono-num bg-[#0f2f4a] text-white text-xs font-extrabold px-3 py-1 rounded-full tracking-wider">
+                                    ${escapeHtml(v.plate)}
+                                </span>
+                                <h3 class="font-bold text-[15px] text-[#0f2f4a] truncate mt-1">
+                                    ${escapeHtml(v.model)}
+                                </h3>
+                                <p class="text-xs text-[#64748b] truncate flex items-center gap-1.5 mt-0.5">
+                                    <i class="fa-regular fa-user text-[11px] text-[#7ea3c2]"></i>
+                                    <span>${escapeHtml(v.client)}</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Fila 3: Lavador con CAMBIAR -->
+                        <div class="bg-[#f3f8fc] border border-[#dce9f4] rounded-xl px-3.5 py-2 flex items-center justify-between">
+                            <span class="text-xs text-[#0f2f4a] flex items-center gap-2">
+                                <i class="fa-solid fa-user-group text-[#2573b3] text-xs"></i>
+                                <span>Lavador: <strong class="font-extrabold">${escapeHtml(v.washer)}</strong></span>
+                            </span>
+                            <button type="button" onclick="openChangeWasherModal('${v.id}')"
+                                    class="text-[11px] font-extrabold text-[#2573b3] hover:text-[#0f2f4a] uppercase flex items-center gap-1 cursor-pointer">
+                                <i class="fa-solid fa-pen text-[10px]"></i>
+                                <span>CAMBIAR</span>
+                            </button>
+                        </div>
+
+                        <!-- Fila 4: Paquete y Total -->
+                        <div class="bg-[#f7fbfe] border border-[#e1edf7] rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2">
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-extrabold uppercase tracking-wider text-[#6e92b2]">PAQUETE</p>
+                                <p class="text-xs font-extrabold text-[#0f2f4a] truncate mt-0.5">${escapeHtml(v.packageName)}</p>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <p class="text-[10px] font-extrabold uppercase tracking-wider text-[#6e92b2]">TOTAL</p>
+                                <p class="font-mono-num text-sm font-extrabold text-[#2573b3] mt-0.5">${formatMoney(v.price)}</p>
+                            </div>
+                        </div>
+
+                        <!-- Fila 5: Entrada y Entrega Est. -->
+                        <div class="flex items-center justify-between text-xs px-0.5">
+                            <div>
+                                <p class="text-[10px] font-extrabold uppercase tracking-wider text-[#7da0be]">ENTRADA</p>
+                                <p class="font-mono-num text-xs font-bold text-[#0f2f4a] mt-0.5">${formatTime12h(v.entryTime)}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[10px] font-extrabold uppercase tracking-wider text-[#7da0be]">ENTREGA EST.</p>
+                                <p class="font-mono-num text-xs font-bold text-[#0f2f4a] mt-0.5">${formatTime12h(estEndTime)}</p>
+                            </div>
+                        </div>
+
+                        <!-- Fila 6: Nota en amarillo suave -->
+                        <div class="bg-[#fef8e4] border border-[#f8e7b0] rounded-xl px-3 py-2 text-xs text-[#7c5a10] flex items-center gap-2">
+                            <i class="fa-solid fa-circle-info text-[#d99b16] text-xs shrink-0"></i>
+                            <span class="truncate font-medium">${escapeHtml(v.note || 'Servicio estándar en curso')}</span>
+                        </div>
+
+                        <!-- Fila 7: Botón principal + Ticket + WhatsApp -->
+                        <div class="flex items-center gap-2 pt-0.5">
+                            ${actionBtn}
+                            <button type="button" onclick="openTicketModal('${v.id}')" title="Ver Ticket"
+                                    class="w-10 h-10 rounded-xl bg-[#eaf3fb] hover:bg-[#d8e9f8] text-[#2573b3] flex items-center justify-center shrink-0 transition-colors cursor-pointer">
+                                <i class="fa-solid fa-receipt text-sm"></i>
+                            </button>
+                            <button type="button" onclick="sendWhatsAppAlert('${v.id}')" title="Enviar aviso por WhatsApp"
+                                    class="w-10 h-10 rounded-xl bg-[#25d366] hover:bg-[#1ebe5d] text-white flex items-center justify-center shrink-0 transition-colors cursor-pointer">
+                                <i class="fa-brands fa-whatsapp text-base"></i>
+                            </button>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        // Actualización de cronómetros cada segundo sin parpadear toda la vista
+        function tickTimers() {
+            const activeCars = appState.vehicles.filter(v => v.stage !== 'Entregado');
+            let needsFullRedraw = false;
+
+            activeCars.forEach(v => {
+                const remSec = getRemainingSeconds(v);
+                const badge = document.querySelector(`[data-timer-id="${v.id}"]`);
+                if (badge) {
+                    badge.textContent = formatSignedTimer(remSec);
+                    const isNowDelayed = isDelayed(v);
+                    const wasDelayed = badge.className.includes('#dc2626');
+                    if (isNowDelayed !== wasDelayed) needsFullRedraw = true;
+                }
+            });
+
+            const retrasoCount = activeCars.filter(v => isDelayed(v)).length;
+            const kpiRet = document.getElementById('kpi-retraso');
+            if (kpiRet) kpiRet.textContent = retrasoCount;
+
+            if (needsFullRedraw) renderPatio();
+        }
+
+        function advanceStage(id, nextStage) {
+            const v = appState.vehicles.find(item => item.id === id);
+            if (!v) return;
+            v.stage = nextStage;
+            saveState();
+            renderPatio();
+            showToast(`${v.plate} → ${nextStage}`, 'info');
+        }
+
+        function removeVehicle(id) {
+            appState.vehicles = appState.vehicles.filter(item => item.id !== id);
+            saveState();
+            renderPatio();
+            showToast('Vehículo retirado del patio.', 'info');
+        }
+
+        // Cambiar lavador
+        function openChangeWasherModal(vehicleId) {
+            editingWasherForId = vehicleId;
+            const v = appState.vehicles.find(item => item.id === vehicleId);
+            if (!v) return;
+            const list = document.getElementById('washer-options-list');
+            list.innerHTML = appState.washers.map(w => `
+                <button type="button" onclick="applyWasherChange('${escapeHtml(w)}')"
+                        class="w-full px-4 py-2.5 rounded-xl border text-left text-xs font-extrabold flex items-center justify-between cursor-pointer ${
+                            v.washer === w
+                                ? 'bg-[#fef9e7] border-[#f5b82e] text-[#0f2f4a]'
+                                : 'bg-[#f3f8fc] border-[#d2e3f0] text-[#0f2f4a] hover:bg-[#e7f1fa]'
+                        }">
+                    <span><i class="fa-solid fa-user-gear text-[#2573b3] mr-2"></i>${escapeHtml(w)}</span>
+                    ${v.washer === w ? '<i class="fa-solid fa-check text-emerald-600"></i>' : ''}
+                </button>
+            `).join('');
+            openModal('modal-change-washer');
+        }
+
+        function applyWasherChange(newWasher) {
+            const v = appState.vehicles.find(item => item.id === editingWasherForId);
+            if (v) {
+                v.washer = newWasher;
+                saveState();
+                renderPatio();
+                showToast(`Lavador asignado: ${newWasher}`, 'success');
+            }
+            editingWasherForId = null;
+            closeModal('modal-change-washer');
+        }
+
+        // Cobro y entrega
+        function openCheckoutModal(vehicleId) {
+            const v = appState.vehicles.find(item => item.id === vehicleId);
+            if (!v) return;
+            checkoutTargetId = vehicleId;
+            document.getElementById('checkout-summary-box').innerHTML = `
+                <div class="flex justify-between text-xs">
+                    <span class="font-bold text-slate-500">Vehículo:</span>
+                    <span class="font-extrabold text-[#0f2f4a]">${escapeHtml(v.plate)} · ${escapeHtml(v.model)}</span>
+                </div>
+                <div class="flex justify-between text-xs">
+                    <span class="font-bold text-slate-500">Paquete:</span>
+                    <span class="font-bold text-[#0f2f4a]">${escapeHtml(v.packageName)}</span>
+                </div>
+                <div class="flex justify-between text-sm pt-1 border-t border-[#d2e3f0]">
+                    <span class="font-extrabold text-[#2573b3]">Total a Cobrar:</span>
+                    <span class="font-mono-num font-extrabold text-[#0f2f4a]">${formatMoney(v.price)}</span>
+                </div>
+            `;
+            openModal('modal-checkout');
+        }
+
+        function confirmCheckout(event) {
+            event.preventDefault();
+            const v = appState.vehicles.find(item => item.id === checkoutTargetId);
+            if (!v) return;
+            v.paid = true;
+            v.paymentMethod = document.getElementById('checkout-method').value;
+            v.stage = 'Entregado';
+            v.deliveredAt = Date.now();
+            saveState();
+            closeModal('modal-checkout');
+            renderPatio();
+            renderCashAndRecepcion();
+            showToast(`Cobrado y entregado ${v.plate} (${formatMoney(v.price)})`, 'success');
+        }
+
+        // Ticket y WhatsApp
+        function openTicketModal(vehicleId) {
+            const v = appState.vehicles.find(item => item.id === vehicleId);
+            if (!v) return;
+            currentTicketVehicle = v;
+            const brand = appState.branding?.name || 'El Champusito';
+
+            document.getElementById('ticket-printable-area').innerHTML = `
+                <div class="text-center border-b border-dashed border-[#2573b3] pb-2">
+                    <p class="font-extrabold text-sm uppercase">${escapeHtml(brand)}</p>
+                    <p class="text-[10px] text-slate-500">Control de Patio, Tiempos y Caja</p>
+                </div>
+                ${v.photo ? `<div><img src="${v.photo}" alt="Foto ${escapeHtml(v.plate)}" class="w-full h-24 object-cover rounded-xl border border-[#d2e3f0]"></div>` : ''}
+                <div class="space-y-1">
+                    <div class="flex justify-between"><span>Placa:</span><strong class="font-mono-num">${escapeHtml(v.plate)}</strong></div>
+                    <div class="flex justify-between"><span>Auto:</span><strong>${escapeHtml(v.model)}</strong></div>
+                    <div class="flex justify-between"><span>Cliente:</span><span>${escapeHtml(v.client)}</span></div>
+                    <div class="flex justify-between"><span>Lavador:</span><span>${escapeHtml(v.washer)}</span></div>
+                    <div class="flex justify-between"><span>Paquete:</span><span>${escapeHtml(v.packageName)}</span></div>
+                    <div class="flex justify-between"><span>Entrada:</span><span class="font-mono-num">${formatTime12h(v.entryTime)}</span></div>
+                    <div class="flex justify-between"><span>Estado:</span><strong>${escapeHtml(v.stage)}</strong></div>
+                </div>
+                <div class="border-t border-dashed border-[#2573b3] pt-2 flex justify-between text-sm font-extrabold">
+                    <span>TOTAL</span>
+                    <span class="font-mono-num">${formatMoney(v.price)}</span>
+                </div>
+            `;
+            openModal('modal-ticket');
+        }
+
+        function buildWhatsAppText(v) {
+            const brand = appState.branding?.name || 'El Champusito';
+            return `Hola ${v.client}, le saludamos de *${brand}*. Su vehículo *${v.model}* (Placa *${v.plate}*) está en estado: *${v.stage}*. Servicio: ${v.packageName} (${formatMoney(v.price)}).`;
+        }
+
+        function sendWhatsAppAlert(vehicleId) {
+            const v = appState.vehicles.find(item => item.id === vehicleId);
+            if (!v) return;
+            const phoneDigits = String(v.phone || '').replace(/\D/g, '');
+            const url = phoneDigits
+                ? `https://wa.me/${phoneDigits}?text=${encodeURIComponent(buildWhatsAppText(v))}`
+                : `https://wa.me/?text=${encodeURIComponent(buildWhatsAppText(v))}`;
+            window.open(url, '_blank', 'noopener');
+        }
+
+        function sendWhatsAppFromTicket() {
+            if (currentTicketVehicle) sendWhatsAppAlert(currentTicketVehicle.id);
+        }
+
+        // Visor ampliado de placa o foto
+        function openPlateZoom(vehicleId) {
+            const v = appState.vehicles.find(item => item.id === vehicleId);
+            if (!v) return;
+            document.getElementById('zoom-title').textContent = `${v.plate} · ${v.model}`;
+            document.getElementById('zoom-content').innerHTML = v.photo
+                ? `<img src="${v.photo}" alt="Foto ${escapeHtml(v.plate)}" class="w-full max-h-72 object-contain rounded-2xl border border-[#d2e3f0] bg-[#f8fbff]">
+                   <span class="font-mono-num bg-[#0f2f4a] text-white px-4 py-1.5 rounded-full text-sm font-extrabold">${escapeHtml(v.plate)}</span>`
+                : `<div class="py-4">${renderMiniPlateSVG(v.plate)}</div>
+                   <span class="font-mono-num bg-[#0f2f4a] text-white px-4 py-1.5 rounded-full text-sm font-extrabold">${escapeHtml(v.plate)}</span>`;
+            openModal('modal-plate-zoom');
+        }
+
+        // Caja, gastos, lavadores y precios
+        function handleAddExpense(event) {
+            event.preventDefault();
+            const desc = document.getElementById('expense-desc').value.trim();
+            const amount = Number(document.getElementById('expense-amount').value);
+            if (!desc || !(amount > 0)) return;
+            appState.expenses.unshift({ id: 'exp-' + Date.now(), desc, amount });
+            event.target.reset();
+            saveState();
+            renderCashAndRecepcion();
+            showToast('Gasto registrado en caja.', 'info');
+        }
+
+        function handleAddWasher(event) {
+            event.preventDefault();
+            const name = document.getElementById('new-washer-name').value.trim();
+            if (!name) return;
+            if (!appState.washers.includes(name)) {
+                appState.washers.push(name);
+                saveState();
+                populateFormSelects();
+                updateRoleUI();
+                renderCashAndRecepcion();
+                showToast(`Lavador ${name} agregado.`, 'success');
+            }
+            document.getElementById('new-washer-name').value = '';
+        }
+
+        function renderCashAndRecepcion() {
+            const collected = appState.vehicles
+                .filter(v => v.paid || v.stage === 'Entregado')
+                .reduce((acc, v) => acc + Number(v.price || 0), 0);
+            const pending = appState.vehicles
+                .filter(v => !v.paid && v.stage !== 'Entregado')
+                .reduce((acc, v) => acc + Number(v.price || 0), 0);
+            const expensesTotal = appState.expenses
+                .reduce((acc, e) => acc + Number(e.amount || 0), 0);
+            const net = collected - expensesTotal;
+
+            document.getElementById('cash-collected').textContent = formatMoney(collected);
+            document.getElementById('cash-expenses').textContent = formatMoney(expensesTotal);
+            document.getElementById('cash-pending').textContent = formatMoney(pending);
+            document.getElementById('cash-net-badge').textContent = `Neto: ${formatMoney(net)}`;
+
+            const expList = document.getElementById('expenses-list');
+            expList.innerHTML = appState.expenses.length
+                ? appState.expenses.map(e => `
+                    <div class="flex justify-between items-center bg-[#f8fbff] px-3 py-1.5 rounded-lg border border-[#e1edf7]">
+                        <span class="truncate text-[#0f2f4a] font-medium">${escapeHtml(e.desc)}</span>
+                        <span class="font-mono-num font-bold text-rose-600 ml-2">-${formatMoney(e.amount)}</span>
+                    </div>
+                `).join('')
+                : `<p class="text-[11px] text-slate-400">Sin gastos registrados en este turno.</p>`;
+
+            const washDiv = document.getElementById('washers-summary-list');
+            washDiv.innerHTML = appState.washers.map(w => {
+                const active = appState.vehicles.filter(v => v.washer === w && v.stage !== 'Entregado').length;
+                const done = appState.vehicles.filter(v => v.washer === w && (v.stage === 'Listo para Entrega' || v.stage === 'Entregado')).length;
+                return `
+                    <div class="flex items-center justify-between px-3.5 py-2 rounded-xl bg-[#f3f8fc] border border-[#d9e6f2]">
+                        <span class="text-xs font-extrabold text-[#0f2f4a]"><i class="fa-solid fa-user-check text-[#2573b3] mr-2"></i>${escapeHtml(w)}</span>
+                        <span class="text-[11px] font-bold text-[#2573b3]">Activos: ${active} · Terminados: ${done}</span>
+                    </div>
+                `;
+            }).join('');
+
+            const pkgList = document.getElementById('packages-readonly-list');
+            const hint = document.getElementById('pricing-access-hint');
+            if (hint) {
+                hint.textContent = isAdminLoggedIn()
+                    ? 'Sesión Administrador activa: puedes editar precios.'
+                    : 'Solo el Administrador autenticado puede editar precios (PIN: 1234).';
+            }
+            if (pkgList) {
+                pkgList.innerHTML = appState.packages.map(pkg => `
+                    <div class="flex items-center justify-between px-3.5 py-2 rounded-xl bg-[#f8fbff] border border-[#e1edf7] text-xs">
+                        <span class="font-bold text-[#0f2f4a]">${escapeHtml(pkg.name)} <span class="text-[10px] text-slate-400">(${pkg.estMinutes} min)</span></span>
+                        <span class="font-mono-num font-extrabold text-[#2573b3]">${formatMoney(pkg.price)}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Inicialización
+        window.addEventListener('DOMContentLoaded', () => {
+            applyBranding();
+            updateRoleUI();
+            populateFormSelects();
+            updateClock();
+            renderPatio();
+            renderCashAndRecepcion();
+
+            setInterval(updateClock, 1000);
+            setInterval(tickTimers, 1000);
+        });
+    </script>
+</body>
+</html>
