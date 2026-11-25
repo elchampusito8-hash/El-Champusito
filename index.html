@@ -2551,7 +2551,9 @@
   appId: "1:188694541518:web:9a19844be95ea514094c9f",
   measurementId: "G-PFY8H4304T"
 };
-
+window.__firebase_config = {
+  ...(window.__firebase_config || {}),
+  ...firebaseConfig
             function setSyncStatus(mode, text) {
                 const dot = document.getElementById('sync-status-dot');
                 const label = document.getElementById('sync-status-text');
