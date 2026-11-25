@@ -2538,23 +2538,26 @@
         });
     </script>
 
-    <!-- ===================================================================== -->
+   <!-- ===================================================================== -->
     <!-- INTEGRACIÓN FIREBASE FIRESTORE REST API (estado_patio / actual)       -->
     <!-- ===================================================================== -->
     <script>
-       const firebaseConfig = {
-  apiKey: "AIzaSyD5vu3XCdoW5V5WQvXyjWhbpKdb90dBhuE",
-  authDomain: "el-champusito-autolavado.firebaseapp.com",
-  projectId: "el-champusito-autolavado",
-  storageBucket: "el-champusito-autolavado.firebasestorage.app",
-  messagingSenderId: "188694541518",
-  appId: "1:188694541518:web:9a19844be95ea514094c9f",
-  measurementId: "G-PFY8H4304T"
-};
-window.__firebase_config = {
-  ...(window.__firebase_config || {}),
-  ...firebaseConfig
-      };
+        (function () {
+            const firebaseConfig = {
+                apiKey: "AIzaSyD5vu3XCdoW5V5WQvXyjWhbpKdb90dBhuE",
+                authDomain: "el-champusito-autolavado.firebaseapp.com",
+                projectId: "el-champusito-autolavado",
+                storageBucket: "el-champusito-autolavado.firebasestorage.app",
+                messagingSenderId: "188694541518",
+                appId: "1:188694541518:web:9a19844be95ea514094c9f",
+                measurementId: "G-PFY8H4304T"
+            };
+
+            window.__firebase_config = {
+                ...(window.__firebase_config || {}),
+                ...firebaseConfig
+            };
+
             function setSyncStatus(mode, text) {
                 const dot = document.getElementById('sync-status-dot');
                 const label = document.getElementById('sync-status-text');
@@ -2763,5 +2766,3 @@ window.__firebase_config = {
             });
         })();
     </script>
-</body>
-</html>
