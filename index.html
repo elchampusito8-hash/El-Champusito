@@ -1,9 +1,14 @@
-
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f2f4a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="El Champusito">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230f2f4a'/%3E%3Ccircle cx='32' cy='32' r='18' fill='%23f5b82e'/%3E%3Ctext x='32' y='39' text-anchor='middle' font-size='20' font-family='sans-serif' font-weight='bold' fill='%230f2f4a'%3EC%3C/text%3E%3C/svg%3E">
     <title>El Champusito - Gestión Operativa de Autolavado</title>
 
     <!-- Tailwind CSS -->
@@ -151,6 +156,20 @@
 
             <!-- Derecha: Cápsula de Navegación + Reloj + Botón + Nuevo Auto -->
             <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                <!-- Acceso rápido a Inicio / Patio -->
+                <button type="button" id="quick-home-btn" onclick="goToInicio()" title="Ir al Inicio / Patio en vivo"
+                        class="px-3 py-1.5 rounded-xl bg-[#082136] hover:bg-[#133b5c] border border-[#1d486e] text-[#7dc6f2] hover:text-white text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer">
+                    <i class="fa-solid fa-house text-[11px] text-[#f5b82e]"></i>
+                    <span>Inicio</span>
+                </button>
+
+                <!-- Acceso rápido a Precios de Servicios (protegido por PIN Admin) -->
+                <button type="button" id="quick-pricing-btn" onclick="openPricingModal()" title="Administrar servicios y precios"
+                        class="px-3 py-1.5 rounded-xl bg-[#082136] hover:bg-[#133b5c] border border-[#1d486e] text-[#f5b82e] text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer">
+                    <i class="fa-solid fa-tags text-[11px]"></i>
+                    <span class="hidden md:inline">Precios</span>
+                </button>
+
                 <div class="bg-[#082136] border border-[#1d486e] rounded-2xl p-1 flex items-center gap-1.5">
                     <!-- Botón Patio con contador amarillo -->
                     <button type="button" id="nav-btn-patio" onclick="switchView('patio')"
@@ -874,6 +893,27 @@
 
                 <div id="pricing-editor-rows" class="space-y-2.5"></div>
 
+                <!-- Agregar Nuevo Servicio al Catálogo -->
+                <div class="bg-[#f3f8fc] border border-[#d2e3f0] rounded-2xl p-3.5 space-y-2.5">
+                    <p class="text-[11px] font-extrabold uppercase tracking-wider text-[#2573b3]">
+                        <i class="fa-solid fa-plus-circle mr-1"></i>Agregar Nuevo Servicio
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                        <input type="text" id="new-service-name" placeholder="Nombre (ej. Pulido de Faros)"
+                               class="sm:col-span-6 px-3 py-2 bg-white border border-[#d2e3f0] rounded-xl text-xs font-bold text-[#0f2f4a]">
+                        <input type="number" id="new-service-price" min="0" step="5" placeholder="$ MXN"
+                               class="sm:col-span-3 px-2.5 py-2 bg-white border border-[#d2e3f0] rounded-xl font-mono-num text-xs font-extrabold text-[#0f2f4a]">
+                        <input type="number" id="new-service-mins" min="5" step="5" placeholder="Min"
+                               class="sm:col-span-3 px-2.5 py-2 bg-white border border-[#d2e3f0] rounded-xl font-mono-num text-xs font-bold text-[#0f2f4a]">
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="button" onclick="addServiceRowInEditor()"
+                                class="px-3.5 py-1.5 rounded-xl bg-[#0f2f4a] hover:bg-[#2573b3] text-white text-xs font-extrabold cursor-pointer">
+                            <i class="fa-solid fa-plus mr-1"></i>Añadir a la Lista
+                        </button>
+                    </div>
+                </div>
+
                 <div class="border-t border-slate-100 pt-3">
                     <label class="block text-xs font-extrabold uppercase text-[#2573b3] mb-1">Cambiar PIN Admin (Opcional)</label>
                     <input type="text" id="new-admin-pin-input" maxlength="12" placeholder="Dejar vacío para mantener PIN actual"
@@ -1114,6 +1154,20 @@
         }
 
         // Navegación
+        function goToInicio() {
+            activeFilter = 'TODOS';
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) searchInput.value = '';
+            document.querySelectorAll('.filter-pill').forEach(btn => {
+                const isAll = btn.getAttribute('data-filter') === 'TODOS';
+                btn.className = isAll
+                    ? 'filter-pill px-4 py-1.5 rounded-xl bg-[#0f2f4a] text-white text-xs font-extrabold transition-all cursor-pointer'
+                    : 'filter-pill px-3.5 py-1.5 rounded-xl bg-white text-[#2573b3] hover:bg-[#f5faff] text-xs font-bold border border-[#d6e5f2] transition-all cursor-pointer';
+            });
+            switchView('patio');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         function switchView(viewName) {
             stopLiveCamera();
             const patioSec = document.getElementById('view-patio');
@@ -1278,44 +1332,152 @@
 
         function openPricingModal() {
             requestAdminAuth(() => {
-                const rows = document.getElementById('pricing-editor-rows');
-                rows.innerHTML = appState.packages.map(pkg => `
-                    <div class="bg-[#f3f8fc] border border-[#d2e3f0] rounded-2xl p-3 flex items-center justify-between gap-3">
-                        <div class="min-w-0">
-                            <p class="text-xs font-extrabold text-[#0f2f4a] truncate">${escapeHtml(pkg.name)}</p>
-                            <p class="text-[10px] text-slate-500">Duración base: ${pkg.estMinutes} min</p>
-                        </div>
-                        <div class="flex items-center gap-1.5 shrink-0">
-                            <span class="font-mono-num text-xs font-bold text-[#2573b3]">$</span>
-                            <input type="number" data-pkg-price-id="${pkg.id}" min="0" step="5" value="${Number(pkg.price) || 0}"
-                                   class="w-24 px-2.5 py-1.5 bg-white border border-[#d2e3f0] rounded-xl font-mono-num text-sm font-extrabold text-[#0f2f4a] text-right">
-                        </div>
-                    </div>
-                `).join('');
+                renderPricingEditorRows(appState.packages);
+                document.getElementById('new-service-name').value = '';
+                document.getElementById('new-service-price').value = '';
+                document.getElementById('new-service-mins').value = '';
                 document.getElementById('new-admin-pin-input').value = '';
                 openModal('modal-pricing-editor');
-            }, 'Inicia sesión como Administrador para editar los precios de servicios.');
+            }, 'Inicia sesión como Administrador para administrar servicios y precios.');
+        }
+
+        function collectCurrentEditorPackages() {
+            const items = [];
+            document.querySelectorAll('[data-pkg-row]').forEach(row => {
+                const id = row.getAttribute('data-pkg-row');
+                const nameInp = row.querySelector('[data-pkg-name]');
+                const priceInp = row.querySelector('[data-pkg-price]');
+                const minsInp = row.querySelector('[data-pkg-mins]');
+                const name = (nameInp?.value || '').trim();
+                const price = Math.max(0, Number(priceInp?.value) || 0);
+                const estMinutes = Math.max(5, Number(minsInp?.value) || 30);
+                if (name) {
+                    items.push({ id, name, price, estMinutes });
+                }
+            });
+            return items;
+        }
+
+        function renderPricingEditorRows(list) {
+            const rows = document.getElementById('pricing-editor-rows');
+            if (!rows) return;
+            const safeList = Array.isArray(list) && list.length ? list : DEFAULT_PACKAGES.slice(0, 1);
+
+            rows.innerHTML = safeList.map(pkg => `
+                <div data-pkg-row="${escapeHtml(pkg.id)}" class="bg-[#f3f8fc] border border-[#d2e3f0] rounded-2xl p-3 space-y-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <input type="text" data-pkg-name value="${escapeHtml(pkg.name)}" required placeholder="Nombre del servicio"
+                               class="flex-1 px-2.5 py-1.5 bg-white border border-[#d2e3f0] rounded-xl text-xs font-extrabold text-[#0f2f4a]">
+                        <button type="button" onclick="removeServiceRowInEditor('${escapeHtml(pkg.id)}')" title="Eliminar servicio"
+                                class="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 text-xs font-bold cursor-pointer">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="flex items-center gap-1.5 bg-white border border-[#d2e3f0] rounded-xl px-2.5 py-1">
+                            <span class="font-mono-num text-xs font-bold text-[#2573b3]">$</span>
+                            <input type="number" data-pkg-price min="0" step="5" value="${Number(pkg.price) || 0}"
+                                   class="w-full font-mono-num text-xs font-extrabold text-[#0f2f4a] text-right focus:outline-none">
+                        </div>
+                        <div class="flex items-center gap-1.5 bg-white border border-[#d2e3f0] rounded-xl px-2.5 py-1">
+                            <input type="number" data-pkg-mins min="5" step="5" value="${Number(pkg.estMinutes) || 30}"
+                                   class="w-full font-mono-num text-xs font-bold text-[#0f2f4a] text-right focus:outline-none">
+                            <span class="text-[10px] font-bold text-slate-500">min</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addServiceRowInEditor() {
+            const nameEl = document.getElementById('new-service-name');
+            const priceEl = document.getElementById('new-service-price');
+            const minsEl = document.getElementById('new-service-mins');
+            const name = (nameEl?.value || '').trim();
+            const price = Math.max(0, Number(priceEl?.value) || 0);
+            const estMinutes = Math.max(5, Number(minsEl?.value) || 45);
+
+            if (!name) {
+                showToast('Escribe el nombre del nuevo servicio.', 'error');
+                nameEl?.focus();
+                return;
+            }
+
+            const current = collectCurrentEditorPackages();
+            current.push({
+                id: 'pkg-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+                name,
+                price,
+                estMinutes
+            });
+            renderPricingEditorRows(current);
+
+            nameEl.value = '';
+            priceEl.value = '';
+            minsEl.value = '';
+            showToast(`Servicio "${name}" agregado a la lista.`, 'info');
+        }
+
+        function removeServiceRowInEditor(rowId) {
+            const current = collectCurrentEditorPackages();
+            if (current.length <= 1) {
+                showToast('Debe quedar al menos 1 servicio en el catálogo.', 'error');
+                return;
+            }
+            const filtered = current.filter(item => item.id !== rowId);
+            renderPricingEditorRows(filtered);
         }
 
         function saveServicePrices(event) {
             event.preventDefault();
             if (!isAdminLoggedIn()) {
                 closeModal('modal-pricing-editor');
-                requestAdminAuth(null, 'Se requiere sesión de Administrador para guardar cambios de precios.');
+                requestAdminAuth(null, 'Se requiere sesión de Administrador para guardar cambios de servicios y precios.');
                 return;
             }
-            document.querySelectorAll('[data-pkg-price-id]').forEach(inp => {
-                const id = inp.getAttribute('data-pkg-price-id');
-                const pkg = appState.packages.find(p => p.id === id);
-                if (pkg) pkg.price = Math.max(0, Number(inp.value) || 0);
+
+            const updatedList = collectCurrentEditorPackages();
+            if (!updatedList.length) {
+                showToast('Debe existir al menos 1 servicio.', 'error');
+                return;
+            }
+
+            const oldById = new Map(appState.packages.map(p => [p.id, p]));
+            const validNames = new Set(updatedList.map(p => p.name));
+            const fallbackPkg = updatedList[0];
+
+            // Actualiza vehículos si un servicio existente cambió de nombre o fue eliminado
+            appState.vehicles.forEach(v => {
+                const matchedByOld = appState.packages.find(p => p.name === v.packageName);
+                if (matchedByOld) {
+                    const stillSame = updatedList.find(u => u.id === matchedByOld.id);
+                    if (stillSame) {
+                        v.packageName = stillSame.name;
+                    } else if (!validNames.has(v.packageName)) {
+                        v.packageName = fallbackPkg.name;
+                    }
+                } else if (!validNames.has(v.packageName)) {
+                    v.packageName = fallbackPkg.name;
+                }
             });
+
+            // Conserva id de servicios que ya existían
+            appState.packages = updatedList.map(item => ({
+                id: oldById.has(item.id) ? item.id : item.id,
+                name: item.name,
+                price: item.price,
+                estMinutes: item.estMinutes
+            }));
+
             const newPin = document.getElementById('new-admin-pin-input').value.trim();
             if (newPin) appState.adminPin = newPin;
+
             saveState();
             closeModal('modal-pricing-editor');
             populateFormSelects();
             renderCashAndRecepcion();
-            showToast('Precios de servicios actualizados.', 'success');
+            renderPatio();
+            showToast('Catálogo de servicios y precios guardado.', 'success');
         }
 
         // Marca y Logo
@@ -2018,6 +2180,67 @@
             document.getElementById('new-washer-name').value = '';
         }
 
+        function renameWasher(index) {
+            const currentName = appState.washers[index];
+            if (!currentName) return;
+            const inputEl = document.getElementById(`washer-rename-input-${index}`);
+            const nextName = (inputEl?.value || '').trim();
+            if (!nextName) {
+                showToast('Escribe un nombre válido para el lavador.', 'error');
+                return;
+            }
+            if (nextName === currentName) return;
+            if (appState.washers.some((w, idx) => idx !== index && w.toLowerCase() === nextName.toLowerCase())) {
+                showToast('Ya existe un lavador con ese nombre.', 'error');
+                return;
+            }
+
+            appState.washers[index] = nextName;
+            appState.vehicles.forEach(v => {
+                if (v.washer === currentName) v.washer = nextName;
+            });
+            if (appState.currentRole === currentName) {
+                appState.currentRole = nextName;
+            }
+
+            saveState();
+            populateFormSelects();
+            updateRoleUI();
+            renderCashAndRecepcion();
+            renderPatio();
+            showToast(`Lavador actualizado a ${nextName}.`, 'success');
+        }
+
+        function deleteWasher(index) {
+            if (appState.washers.length <= 1) {
+                showToast('Debe quedar al menos 1 lavador en patio.', 'error');
+                return;
+            }
+            const removedName = appState.washers[index];
+            if (!removedName) return;
+
+            const remaining = appState.washers.filter((_, idx) => idx !== index);
+            const fallbackWasher = remaining[0];
+
+            appState.vehicles.forEach(v => {
+                if (v.washer === removedName) {
+                    v.washer = fallbackWasher;
+                }
+            });
+
+            if (appState.currentRole === removedName) {
+                appState.currentRole = fallbackWasher;
+            }
+
+            appState.washers = remaining;
+            saveState();
+            populateFormSelects();
+            updateRoleUI();
+            renderCashAndRecepcion();
+            renderPatio();
+            showToast(`Lavador ${removedName} eliminado (autos reasignados a ${fallbackWasher}).`, 'info');
+        }
+
         function renderCashAndRecepcion() {
             const collected = appState.vehicles
                 .filter(v => v.paid || v.stage === 'Entregado')
@@ -2045,13 +2268,35 @@
                 : `<p class="text-[11px] text-slate-400">Sin gastos registrados en este turno.</p>`;
 
             const washDiv = document.getElementById('washers-summary-list');
-            washDiv.innerHTML = appState.washers.map(w => {
+            washDiv.innerHTML = appState.washers.map((w, idx) => {
                 const active = appState.vehicles.filter(v => v.washer === w && v.stage !== 'Entregado').length;
                 const done = appState.vehicles.filter(v => v.washer === w && (v.stage === 'Listo para Entrega' || v.stage === 'Entregado')).length;
+                const canDelete = appState.washers.length > 1;
                 return `
-                    <div class="flex items-center justify-between px-3.5 py-2 rounded-xl bg-[#f3f8fc] border border-[#d9e6f2]">
-                        <span class="text-xs font-extrabold text-[#0f2f4a]"><i class="fa-solid fa-user-check text-[#2573b3] mr-2"></i>${escapeHtml(w)}</span>
-                        <span class="text-[11px] font-bold text-[#2573b3]">Activos: ${active} · Terminados: ${done}</span>
+                    <div class="px-3.5 py-2.5 rounded-xl bg-[#f3f8fc] border border-[#d9e6f2] space-y-2">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-xs font-extrabold text-[#0f2f4a] truncate">
+                                <i class="fa-solid fa-user-check text-[#2573b3] mr-2"></i>${escapeHtml(w)}
+                            </span>
+                            <span class="text-[11px] font-bold text-[#2573b3] shrink-0">Activos: ${active} · Terminados: ${done}</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-1.5 pt-1 border-t border-[#e1edf7]">
+                            <input type="text" id="washer-rename-input-${idx}" value="${escapeHtml(w)}" aria-label="Nombre de ${escapeHtml(w)}"
+                                   class="flex-1 min-w-0 px-2.5 py-1 bg-white border border-[#d2e3f0] rounded-lg text-xs font-semibold text-[#0f2f4a]">
+                            <button type="button" onclick="renameWasher(${idx})" title="Guardar nombre de lavador"
+                                    class="px-2.5 py-1 rounded-lg bg-[#0f2f4a] hover:bg-[#2573b3] text-white text-[11px] font-bold cursor-pointer shrink-0">
+                                <i class="fa-solid fa-check"></i>
+                            </button>
+                            <button type="button" onclick="deleteWasher(${idx})" ${canDelete ? '' : 'disabled'}
+                                    title="${canDelete ? 'Eliminar lavador' : 'Debe quedar al menos 1 lavador'}"
+                                    class="px-2.5 py-1 rounded-lg text-[11px] font-bold shrink-0 ${
+                                        canDelete
+                                            ? 'bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 cursor-pointer'
+                                            : 'bg-slate-100 border border-slate-200 text-slate-300 cursor-not-allowed'
+                                    }">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -2281,4 +2526,4 @@
         })();
     </script>
 </body>
-</html>  
+</html>
