@@ -2579,6 +2579,7 @@
 
             let lastRemoteStamp = 0;
             let lastRemoteSignature = '';
+            let hasInitialPullCompleted = false;
             let isApplyingRemote = false;
             let pushDebounceTimer = null;
             let pollIntervalId = null;
@@ -2635,14 +2636,23 @@
                 const resp = await fetch(url, options);
                 const rawText = await resp.text();
                 const trimmed = rawText.trim();
-                if (!resp.ok || !trimmed || trimmed.startsWith('<')) {
-                    throw new Error('Respuesta inválida de Firestore');
+                let parsed = null;
+                try {
+                    parsed = trimmed && !trimmed.startsWith('<') ? JSON.parse(trimmed) : null;
+                } catch (_e) {}
+
+                if (!resp.ok) {
+                    const apiMsg = parsed?.error?.message || `HTTP ${resp.status}`;
+                    throw new Error(apiMsg);
                 }
-                return JSON.parse(trimmed);
+                if (!parsed) {
+                    throw new Error('Respuesta no JSON de Firestore');
+                }
+                return parsed;
             }
 
             async function pushStateToFirestore() {
-                if (typeof appState === 'undefined' || isApplyingRemote) return;
+                if (typeof appState === 'undefined' || isApplyingRemote || !hasInitialPullCompleted) return;
                 try {
                     setSyncStatus('syncing', 'Sincronizando nube...');
                     const cleanPayload = JSON.parse(JSON.stringify(normalizeState(appState)));
@@ -2662,8 +2672,9 @@
                     lastRemoteStamp = nowStamp;
                     lastRemoteSignature = JSON.stringify(cleanPayload);
                     setSyncStatus('online', 'En línea · Firestore Sincronizado');
-                } catch (_err) {
-                    setSyncStatus('local', 'Respaldo local activo');
+                } catch (err) {
+                    console.warn('[Firestore PUSH error]:', err.message);
+                    setSyncStatus('local', `Local · ${err.message}`);
                 }
             }
 
@@ -2671,6 +2682,8 @@
                 if (typeof appState === 'undefined' || isApplyingRemote) return;
                 try {
                     const docJson = await safeFirestoreRequest(firestoreUrl, { method: 'GET' });
+                    hasInitialPullCompleted = true;
+
                     const fields = docJson?.fields || {};
                     const remoteStamp = Number(fields?.updatedAt?.integerValue || 0);
                     let remoteData = fromFirestoreValue(fields?.data);
@@ -2688,9 +2701,8 @@
 
                     const normalizedRemote = remoteData ? normalizeState(remoteData) : null;
                     const remoteSig = normalizedRemote ? JSON.stringify(normalizedRemote) : '';
-                    const localSig = JSON.stringify(normalizeState(appState));
 
-                    if (normalizedRemote && remoteSig !== lastRemoteSignature && (remoteStamp > lastRemoteStamp || remoteSig !== localSig)) {
+                    if (normalizedRemote && remoteSig !== lastRemoteSignature && remoteStamp >= lastRemoteStamp) {
                         lastRemoteStamp = remoteStamp || Date.now();
                         lastRemoteSignature = remoteSig;
                         isApplyingRemote = true;
@@ -2712,14 +2724,19 @@
                         lastRemoteStamp = remoteStamp;
                     }
                     setSyncStatus('online', 'En línea · Firestore Sincronizado');
-                } catch (_err) {
-                    if (lastRemoteStamp === 0) {
-                        setSyncStatus('local', 'Respaldo local activo');
+                } catch (err) {
+                    hasInitialPullCompleted = true;
+                    if (String(err.message).toLowerCase().includes('not found') || String(err.message).includes('404')) {
+                        await pushStateToFirestore();
+                        return;
                     }
+                    console.warn('[Firestore PULL error]:', err.message);
+                    setSyncStatus('local', `Respaldo local (${err.message})`);
                 }
             }
 
             window.forceSyncNow = function () {
+                setSyncStatus('syncing', 'Verificando conexión...');
                 pullStateFromFirestore();
             };
 
@@ -2728,7 +2745,7 @@
                 if (typeof originalSaveState === 'function') {
                     originalSaveState();
                 }
-                if (!isApplyingRemote) {
+                if (!isApplyingRemote && hasInitialPullCompleted) {
                     clearTimeout(pushDebounceTimer);
                     pushDebounceTimer = setTimeout(pushStateToFirestore, 350);
                 }
