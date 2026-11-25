@@ -215,7 +215,9 @@
                     </div>
                     <p class="text-[11px] text-sky-200 font-medium mt-1 flex items-center gap-1.5 truncate">
                         <span id="sync-status-dot" class="w-2 h-2 rounded-full bg-amber-400 inline-block shrink-0"></span>
-                        <span id="sync-status-text">Conectando sincronización...</span>
+                        <button type="button" id="sync-status-btn" onclick="window.__forceFirestoreSync && window.__forceFirestoreSync()" title="Toca para forzar sincronización con Firestore" class="truncate text-left hover:text-white transition-colors cursor-pointer">
+                            <span id="sync-status-text">Conectando sincronización...</span>
+                        </button>
                     </p>
                 </div>
             </div>
@@ -1765,23 +1767,20 @@
         }
 
         function syncPackagePrice() {
-            const pkgSel = document.getElementById('modal-package');
-            const priceInp = document.getElementById('modal-price');
-            const descHint = document.getElementById('modal-package-desc-hint');
             const vType = document.getElementById('modal-vehicle-type')?.value || 'Sedán';
-            if (!pkgSel || !priceInp) return;
-            const availablePkgs = appState.packages.filter(p => isPackageAvailableForType(p, vType));
-            const found = availablePkgs.find(p => p.name === pkgSel.value)
-                || availablePkgs[0]
-                || appState.packages.find(p => p.name === pkgSel.value)
-                || appState.packages[0];
-            if (found) {
-                priceInp.value = getPackagePriceForType(found, vType);
-                const descText = getPackageDescriptionForType(found, vType);
+            const pkgName = document.getElementById('modal-package')?.value;
+            const priceInput = document.getElementById('modal-price');
+            const descHint = document.getElementById('modal-package-desc-hint');
+            if (!priceInput) return;
+
+            const pkgObj = appState.packages.find(p => p.name === pkgName);
+            if (pkgObj) {
+                priceInput.value = getPackagePriceForType(pkgObj, vType);
                 if (descHint) {
-                    descHint.textContent = descText
-                        ? `${found.name} (${vType}): ${descText} · Est. ${found.estMinutes} min`
-                        : `${found.name} (${vType}) · Est. ${found.estMinutes} min`;
+                    const desc = getPackageDescriptionForType(pkgObj, vType);
+                    descHint.textContent = desc
+                        ? `${vType} · ${pkgObj.name} (${pkgObj.estMinutes} min): ${desc}`
+                        : `${vType} · ${pkgObj.name} (${pkgObj.estMinutes} min)`;
                 }
             }
         }
@@ -2643,9 +2642,25 @@
             const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(cfg.projectId)}/databases/(default)/documents/estado_patio/actual?key=${encodeURIComponent(cfg.apiKey)}`;
 
             let lastRemoteStamp = 0;
+            let lastPushedSignature = '';
             let isApplyingRemote = false;
             let pushDebounceTimer = null;
             let pollIntervalId = null;
+
+            function computeStateSignature(stateObj) {
+                try {
+                    return JSON.stringify({
+                        branding: stateObj.branding || {},
+                        adminPin: stateObj.adminPin || '1234',
+                        washers: stateObj.washers || [],
+                        packages: stateObj.packages || [],
+                        vehicles: stateObj.vehicles || [],
+                        expenses: stateObj.expenses || []
+                    });
+                } catch (_e) {
+                    return '';
+                }
+            }
 
             function toFirestoreValue(val) {
                 if (val === null || val === undefined) return { nullValue: null };
@@ -2695,35 +2710,66 @@
                 return null;
             }
 
+            function extractRemotePayload(docJson) {
+                const fields = docJson?.fields;
+                if (!fields || typeof fields !== 'object') return null;
+                const wrappedData = fromFirestoreValue(fields.data);
+                if (wrappedData && typeof wrappedData === 'object') {
+                    return wrappedData;
+                }
+                const rootObj = {};
+                ['branding', 'adminPin', 'washers', 'packages', 'vehicles', 'expenses'].forEach((key) => {
+                    if (fields[key] !== undefined) {
+                        rootObj[key] = fromFirestoreValue(fields[key]);
+                    }
+                });
+                return Object.keys(rootObj).length ? rootObj : null;
+            }
+
             async function safeFirestoreRequest(url, options) {
                 const resp = await fetch(url, options);
                 const rawText = await resp.text();
                 const trimmed = rawText.trim();
                 if (!resp.ok || !trimmed || trimmed.startsWith('<')) {
-                    throw new Error('Respuesta inválida de Firestore');
+                    const err = new Error(`Respuesta inválida de Firestore (${resp.status})`);
+                    err.status = resp.status;
+                    throw err;
                 }
                 return JSON.parse(trimmed);
             }
 
-            async function pushStateToFirestore() {
+            async function pushStateToFirestore(forcePush = false) {
                 if (typeof appState === 'undefined' || isApplyingRemote) return;
                 try {
-                    setSyncStatus('syncing', 'Sincronizando nube...');
                     const cleanPayload = JSON.parse(JSON.stringify(appState));
-                    const nowStamp = Date.now();
+                    const nextSig = computeStateSignature(cleanPayload);
+                    if (!forcePush && nextSig && nextSig === lastPushedSignature) {
+                        setSyncStatus('online', 'En línea · Firestore Sincronizado');
+                        return;
+                    }
 
-                    await safeFirestoreRequest(firestoreUrl, {
+                    setSyncStatus('syncing', 'Sincronizando nube...');
+                    const nowStamp = Date.now();
+                    const patchUrl = `${firestoreUrl}&updateMask.fieldPaths=branding&updateMask.fieldPaths=adminPin&updateMask.fieldPaths=washers&updateMask.fieldPaths=packages&updateMask.fieldPaths=vehicles&updateMask.fieldPaths=expenses&updateMask.fieldPaths=updatedAt`;
+
+                    await safeFirestoreRequest(patchUrl, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             fields: {
-                                data: toFirestoreValue(cleanPayload),
+                                branding: toFirestoreValue(cleanPayload.branding || {}),
+                                adminPin: toFirestoreValue(String(cleanPayload.adminPin || '1234')),
+                                washers: toFirestoreValue(cleanPayload.washers || []),
+                                packages: toFirestoreValue(cleanPayload.packages || []),
+                                vehicles: toFirestoreValue(cleanPayload.vehicles || []),
+                                expenses: toFirestoreValue(cleanPayload.expenses || []),
                                 updatedAt: { integerValue: String(nowStamp) }
                             }
                         })
                     });
 
                     lastRemoteStamp = nowStamp;
+                    lastPushedSignature = nextSig;
                     setSyncStatus('online', 'En línea · Firestore Sincronizado');
                 } catch (_err) {
                     setSyncStatus('local', 'Respaldo local activo');
@@ -2731,39 +2777,53 @@
             }
 
             async function pullStateFromFirestore() {
-                if (typeof appState === 'undefined') return;
+                if (typeof appState === 'undefined' || isApplyingRemote) return;
                 try {
                     const docJson = await safeFirestoreRequest(firestoreUrl, { method: 'GET' });
                     const remoteStamp = Number(docJson?.fields?.updatedAt?.integerValue || 0);
-                    const remoteData = fromFirestoreValue(docJson?.fields?.data);
+                    const remoteData = extractRemotePayload(docJson);
 
-                    if (remoteData && remoteStamp > lastRemoteStamp) {
-                        lastRemoteStamp = remoteStamp;
-                        isApplyingRemote = true;
-                        const base = typeof createInitialState === 'function' ? createInitialState() : {};
+                    if (remoteData && typeof remoteData === 'object') {
+                        const remoteSig = computeStateSignature(remoteData);
+                        const localSig = computeStateSignature(appState);
 
-                        appState = {
-                            ...base,
-                            ...appState,
-                            ...remoteData,
-                            branding: { ...(base.branding || {}), ...(remoteData.branding || {}) },
-                            packages: typeof normalizePackagesList === 'function'
-                                ? normalizePackagesList(remoteData.packages)
-                                : (remoteData.packages || base.packages)
-                        };
+                        if (remoteStamp !== lastRemoteStamp || (remoteSig && remoteSig !== localSig)) {
+                            lastRemoteStamp = remoteStamp;
+                            lastPushedSignature = remoteSig;
+                            isApplyingRemote = true;
+                            const base = typeof createInitialState === 'function' ? createInitialState() : {};
 
-                        try {
-                            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-                        } catch (_storageErr) {}
+                            appState = {
+                                ...base,
+                                branding: { ...(base.branding || {}), ...(remoteData.branding || {}) },
+                                adminPin: remoteData.adminPin ? String(remoteData.adminPin) : (appState.adminPin || '1234'),
+                                washers: Array.isArray(remoteData.washers) && remoteData.washers.length
+                                    ? remoteData.washers
+                                    : (base.washers || ['Carlos', 'Mateo']),
+                                packages: typeof normalizePackagesList === 'function'
+                                    ? normalizePackagesList(remoteData.packages)
+                                    : (remoteData.packages || base.packages),
+                                vehicles: Array.isArray(remoteData.vehicles) ? remoteData.vehicles : [],
+                                expenses: Array.isArray(remoteData.expenses) ? remoteData.expenses : []
+                            };
 
-                        if (typeof applyBranding === 'function') applyBranding();
-                        if (typeof updateRoleUI === 'function') updateRoleUI();
-                        if (typeof populateFormSelects === 'function') populateFormSelects();
-                        if (typeof renderPatio === 'function') renderPatio();
-                        if (typeof renderCashAndRecepcion === 'function') renderCashAndRecepcion();
+                            try {
+                                localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+                            } catch (_storageErr) {}
+
+                            if (typeof applyBranding === 'function') applyBranding();
+                            if (typeof updateRoleUI === 'function') updateRoleUI();
+                            if (typeof populateFormSelects === 'function') populateFormSelects();
+                            if (typeof renderPatio === 'function') renderPatio();
+                            if (typeof renderCashAndRecepcion === 'function') renderCashAndRecepcion();
+                        }
                     }
                     setSyncStatus('online', 'En línea · Firestore Sincronizado');
-                } catch (_err) {
+                } catch (err) {
+                    if (err && err.status === 404 && Array.isArray(appState.vehicles) && appState.vehicles.length > 0) {
+                        await pushStateToFirestore(true);
+                        return;
+                    }
                     if (lastRemoteStamp === 0) {
                         setSyncStatus('local', 'Respaldo local activo');
                     }
@@ -2772,6 +2832,11 @@
                 }
             }
 
+            window.__forceFirestoreSync = async function () {
+                await pullStateFromFirestore();
+                await pushStateToFirestore(false);
+            };
+
             const originalSaveState = window.saveState;
             window.saveState = function () {
                 if (typeof originalSaveState === 'function') {
@@ -2779,13 +2844,19 @@
                 }
                 if (!isApplyingRemote) {
                     clearTimeout(pushDebounceTimer);
-                    pushDebounceTimer = setTimeout(pushStateToFirestore, 350);
+                    pushDebounceTimer = setTimeout(() => pushStateToFirestore(false), 350);
                 }
             };
 
             window.addEventListener('DOMContentLoaded', () => {
                 pullStateFromFirestore();
-                pollIntervalId = setInterval(pullStateFromFirestore, 4000);
+                pollIntervalId = setInterval(pullStateFromFirestore, 3000);
+            });
+
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) {
+                    pullStateFromFirestore();
+                }
             });
 
             window.addEventListener('beforeunload', () => {
