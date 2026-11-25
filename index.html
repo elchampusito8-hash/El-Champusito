@@ -544,7 +544,26 @@
                                 <span>Editar Precios</span>
                             </button>
                         </div>
-                        <div id="packages-readonly-list" class="space-y-1.5"></div>
+                        <!-- Pestañas por Tipo de Vehículo -->
+                        <div id="pricing-type-tabs" class="grid grid-cols-4 gap-1 bg-[#f3f8fc] p-1 rounded-xl border border-[#d2e3f0]">
+                            <button type="button" data-vtype="Sedán" onclick="setPricingPreviewType('Sedán')"
+                                    class="pricing-tab px-2 py-1.5 rounded-lg bg-[#0f2942] text-white text-[11px] font-extrabold cursor-pointer transition-all">
+                                Sedán
+                            </button>
+                            <button type="button" data-vtype="Camioneta Corta" onclick="setPricingPreviewType('Camioneta Corta')"
+                                    class="pricing-tab px-2 py-1.5 rounded-lg text-[#0284c7] hover:bg-white text-[11px] font-bold cursor-pointer transition-all truncate">
+                                Cam. Corta
+                            </button>
+                            <button type="button" data-vtype="Camioneta Larga" onclick="setPricingPreviewType('Camioneta Larga')"
+                                    class="pricing-tab px-2 py-1.5 rounded-lg text-[#0284c7] hover:bg-white text-[11px] font-bold cursor-pointer transition-all truncate">
+                                Cam. Larga
+                            </button>
+                            <button type="button" data-vtype="Moto" onclick="setPricingPreviewType('Moto')"
+                                    class="pricing-tab px-2 py-1.5 rounded-lg text-[#0284c7] hover:bg-white text-[11px] font-bold cursor-pointer transition-all">
+                                Moto
+                            </button>
+                        </div>
+                        <div id="packages-readonly-list" class="space-y-2"></div>
                     </div>
                 </div>
             </div>
@@ -605,7 +624,7 @@
                                class="w-full px-3.5 py-2.5 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl font-mono-num text-sm font-extrabold uppercase text-[#0f2942]">
                     </div>
                     <div>
-                        <label class="block text-xs font-extrabold uppercase text-[#0284c7] mb-1">Modelo / Tipo de Vehículo *</label>
+                        <label class="block text-xs font-extrabold uppercase text-[#0284c7] mb-1">Modelo / Color *</label>
                         <input type="text" id="modal-model" required placeholder="Ej. Nissan Versa Blanco"
                                class="w-full px-3.5 py-2.5 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl text-sm font-semibold text-[#0f2942]">
                     </div>
@@ -624,7 +643,17 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase text-[#0284c7] mb-1">Tipo de Vehículo *</label>
+                        <select id="modal-vehicle-type" onchange="onModalVehicleTypeChange()"
+                                class="w-full px-3 py-2.5 bg-sky-50 border border-sky-200 rounded-xl text-xs font-extrabold text-[#0f2942]">
+                            <option value="Sedán">Sedán</option>
+                            <option value="Camioneta Corta">Camioneta Corta</option>
+                            <option value="Camioneta Larga">Camioneta Larga</option>
+                            <option value="Moto">Moto</option>
+                        </select>
+                    </div>
                     <div>
                         <label class="block text-xs font-extrabold uppercase text-[#0284c7] mb-1">Paquete de Servicio *</label>
                         <select id="modal-package" onchange="syncPackagePrice()"
@@ -636,12 +665,13 @@
                                 class="w-full px-3 py-2.5 bg-sky-50 border border-sky-200 rounded-xl text-xs font-bold text-[#0f2942]"></select>
                     </div>
                 </div>
+                <p id="modal-package-desc-hint" class="text-[11px] text-slate-500 bg-[#f3f8fc] border border-[#dce9f4] rounded-xl px-3 py-1.5"></p>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                     <div>
-                        <label class="block text-xs font-extrabold uppercase text-[#0284c7] mb-1">Total ($ MXN)</label>
-                        <input type="number" id="modal-price" min="0" step="5" required oninput="handleManualPriceInput()"
-                               class="w-full px-3 py-2.5 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl font-mono-num text-sm font-extrabold text-[#0f2942]">
+                        <label class="block text-xs font-extrabold uppercase text-[#0284c7] mb-1">Total ($ MXN) *</label>
+                        <input type="number" id="modal-price" required min="0" step="5"
+                               class="w-full px-3.5 py-2.5 bg-[#f3f8fc] border border-[#d2e3f0] rounded-xl font-mono-num text-sm font-extrabold text-[#0f2942]">
                     </div>
                     <div>
                         <label class="block text-xs font-extrabold uppercase text-[#0284c7] mb-1">Estado de Pago</label>
@@ -825,35 +855,45 @@
 
     <!-- MODAL 7: EDITOR DE SERVICIOS Y PRECIOS (SOLO ADMIN) -->
     <div id="modal-pricing-editor" class="fixed inset-0 bg-[#091c2e]/70 z-50 hidden items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-[#d2e3f0]">
+        <div class="bg-white rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl border border-[#d2e3f0]">
             <div class="bg-[#0f2942] text-white px-5 py-4 flex items-center justify-between border-b-[3px] border-[#10b981]">
                 <h3 class="font-brand text-lg text-white flex items-center gap-2">
-                    <i class="fa-solid fa-tags text-[#10b981]"></i> Servicios y Precios
+                    <i class="fa-solid fa-tags text-[#10b981]"></i> Catálogo Matricial de Servicios y Precios
                 </h3>
                 <button type="button" onclick="closeModal('modal-pricing-editor')" class="text-sky-200 hover:text-white cursor-pointer">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
             <form onsubmit="saveServicePrices(event)" class="p-5 space-y-4 max-h-[85vh] overflow-y-auto">
-                <div id="pricing-editor-rows" class="space-y-2.5"></div>
+                <div id="pricing-editor-rows" class="space-y-3"></div>
 
-                <!-- Agregar Nuevo Servicio -->
+                <!-- Agregar Nuevo Paquete Matricial -->
                 <div class="bg-[#f3f8fc] border border-[#d2e3f0] rounded-2xl p-3.5 space-y-2.5">
                     <p class="text-[11px] font-extrabold uppercase tracking-wider text-[#0284c7]">
-                        <i class="fa-solid fa-plus-circle mr-1"></i>Agregar Nuevo Servicio
+                        <i class="fa-solid fa-plus-circle mr-1"></i>Agregar Nuevo Paquete de Servicio
                     </p>
                     <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
-                        <input type="text" id="new-service-name" placeholder="Nombre (ej. Lavado Motor)"
-                               class="sm:col-span-6 px-3 py-2 bg-white border border-[#d2e3f0] rounded-xl text-xs font-bold text-[#0f2942]">
-                        <input type="number" id="new-service-price" min="0" step="5" placeholder="$ MXN"
-                               class="sm:col-span-3 px-2.5 py-2 bg-white border border-[#d2e3f0] rounded-xl font-mono-num text-xs font-extrabold text-[#0f2942]">
+                        <input type="text" id="new-service-name" placeholder="Nombre del paquete"
+                               class="sm:col-span-5 px-3 py-2 bg-white border border-[#d2e3f0] rounded-xl text-xs font-bold text-[#0f2942]">
+                        <input type="text" id="new-service-desc" placeholder="Descripción (qué incluye)"
+                               class="sm:col-span-5 px-3 py-2 bg-white border border-[#d2e3f0] rounded-xl text-xs font-medium text-[#0f2942]">
                         <input type="number" id="new-service-mins" min="5" step="5" placeholder="Min"
-                               class="sm:col-span-3 px-2.5 py-2 bg-white border border-[#d2e3f0] rounded-xl font-mono-num text-xs font-bold text-[#0f2942]">
+                               class="sm:col-span-2 px-2.5 py-2 bg-white border border-[#d2e3f0] rounded-xl font-mono-num text-xs font-bold text-[#0f2942]">
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <input type="number" id="new-service-price-sedan" min="0" step="5" placeholder="Sedán $"
+                               class="px-2.5 py-2 bg-white border border-[#d2e3f0] rounded-xl font-mono-num text-xs font-extrabold text-[#0f2942]">
+                        <input type="number" id="new-service-price-corta" min="0" step="5" placeholder="Cam. Corta $"
+                               class="px-2.5 py-2 bg-white border border-[#d2e3f0] rounded-xl font-mono-num text-xs font-extrabold text-[#0f2942]">
+                        <input type="number" id="new-service-price-larga" min="0" step="5" placeholder="Cam. Larga $"
+                               class="px-2.5 py-2 bg-white border border-[#d2e3f0] rounded-xl font-mono-num text-xs font-extrabold text-[#0f2942]">
+                        <input type="number" id="new-service-price-moto" min="0" step="5" placeholder="Moto $"
+                               class="px-2.5 py-2 bg-white border border-[#d2e3f0] rounded-xl font-mono-num text-xs font-extrabold text-[#0f2942]">
                     </div>
                     <div class="flex justify-end">
                         <button type="button" onclick="addServiceRowInEditor()"
                                 class="px-3.5 py-1.5 rounded-xl bg-[#0284c7] hover:bg-[#0f2942] text-white text-xs font-extrabold cursor-pointer">
-                            <i class="fa-solid fa-plus mr-1"></i>Añadir Servicio
+                            <i class="fa-solid fa-plus mr-1"></i>Añadir Paquete
                         </button>
                     </div>
                 </div>
@@ -948,12 +988,14 @@
     <!-- LÓGICA DE APLICACIÓN                                                  -->
     <!-- ===================================================================== -->
     <script>
-        const STORAGE_KEY = 'el_champusito_operacion_v4';
+        const STORAGE_KEY = 'el_champusito_operacion_v5';
         const SESSION_KEY = 'el_champusito_session_role_v1';
 
         const STAGES_ORDER = ['Recepción', 'En Lavado', 'Detallado / Secado', 'Listo', 'Entregado'];
+        const VEHICLE_TYPES = ['Sedán', 'Camioneta Corta', 'Camioneta Larga', 'Moto'];
 
         let activeFilter = 'TODOS';
+        let pricingPreviewVehicleType = 'Sedán';
         let editingWasherForId = null;
         let checkoutTargetId = null;
         let uploadedModalPhoto = null;
@@ -961,11 +1003,135 @@
         let pendingAdminCallback = null;
 
         const DEFAULT_PACKAGES = [
-            { id: 'pkg-exp', name: 'Lavado Express', price: 120, estMinutes: 25 },
-            { id: 'pkg-comp', name: 'Lavado Completo', price: 180, estMinutes: 40 },
-            { id: 'pkg-enc', name: 'Lavado + Encerado', price: 280, estMinutes: 60 },
-            { id: 'pkg-det', name: 'Detallado Interior', price: 450, estMinutes: 90 }
+            {
+                id: 'pkg-eco',
+                name: 'Económico',
+                description: 'Lavado a presión, shampoo, silicona de llantas y lavado de pisos',
+                estMinutes: 15,
+                availableFor: ['Sedán', 'Camioneta Corta', 'Camioneta Larga'],
+                prices: { 'Sedán': 60, 'Camioneta Corta': 80, 'Camioneta Larga': 100, 'Moto': 0 }
+            },
+            {
+                id: 'pkg-est',
+                name: 'Estándar',
+                description: 'Servicio Económico + aspirado interior, silicona y aromatizador',
+                motoDescription: 'Lavado a presión, shampoo y detallado básico para moto',
+                estMinutes: 25,
+                availableFor: ['Sedán', 'Camioneta Corta', 'Camioneta Larga', 'Moto'],
+                prices: { 'Sedán': 100, 'Camioneta Corta': 120, 'Camioneta Larga': 150, 'Moto': 50 }
+            },
+            {
+                id: 'pkg-eje',
+                name: 'Ejecutivo',
+                description: 'Servicio Estándar + encerado con protección UV',
+                estMinutes: 35,
+                availableFor: ['Sedán', 'Camioneta Corta', 'Camioneta Larga'],
+                prices: { 'Sedán': 120, 'Camioneta Corta': 140, 'Camioneta Larga': 180, 'Moto': 0 }
+            },
+            {
+                id: 'pkg-pre',
+                name: 'Premium',
+                description: 'Servicio Ejecutivo + limpieza de motor',
+                motoDescription: 'Engrasado de cadena y encerado',
+                estMinutes: 45,
+                availableFor: ['Sedán', 'Camioneta Corta', 'Camioneta Larga', 'Moto'],
+                prices: { 'Sedán': 180, 'Camioneta Corta': 200, 'Camioneta Larga': 230, 'Moto': 100 }
+            },
+            {
+                id: 'pkg-cha',
+                name: 'Lavado de Chasis',
+                description: 'Lavado a presión, desengrasante, shampoo y limpieza detallada',
+                estMinutes: 60,
+                availableFor: ['Sedán', 'Camioneta Corta', 'Camioneta Larga'],
+                prices: { 'Sedán': 350, 'Camioneta Corta': 450, 'Camioneta Larga': 550, 'Moto': 0 }
+            }
         ];
+
+        function cloneDefaultPackages() {
+            return DEFAULT_PACKAGES.map(p => ({
+                id: p.id,
+                name: p.name,
+                description: p.description,
+                motoDescription: p.motoDescription || '',
+                estMinutes: p.estMinutes,
+                availableFor: Array.isArray(p.availableFor) ? [...p.availableFor] : [...VEHICLE_TYPES],
+                prices: { ...p.prices }
+            }));
+        }
+
+        function isPackageAvailableForType(pkg, vehicleType) {
+            if (!pkg) return false;
+            const vType = VEHICLE_TYPES.includes(vehicleType) ? vehicleType : 'Sedán';
+            if (Array.isArray(pkg.availableFor) && pkg.availableFor.length) {
+                return pkg.availableFor.includes(vType);
+            }
+            return true;
+        }
+
+        function getPackageDescriptionForType(pkg, vehicleType) {
+            if (!pkg) return '';
+            if (vehicleType === 'Moto' && pkg.motoDescription) {
+                return pkg.motoDescription;
+            }
+            return pkg.description || '';
+        }
+
+        // Migración automática si existen paquetes en formato plano antiguo
+        function normalizePackagesList(rawList) {
+            if (!Array.isArray(rawList) || !rawList.length) return cloneDefaultPackages();
+            const hasLegacyNames = rawList.some(p =>
+                ['Lavado Express', 'Lavado Completo', 'Lavado + Encerado', 'Detallado Interior'].includes(p?.name) && !p?.prices
+            );
+            if (hasLegacyNames) return cloneDefaultPackages();
+
+            return rawList.map((p, idx) => {
+                const basePrice = Number(p?.price) || 100;
+                const rawPrices = p?.prices && typeof p.prices === 'object' ? p.prices : {};
+                const cleanName = String(p?.name || `Paquete ${idx + 1}`);
+                const defaultAvail = cleanName === 'Estándar' || cleanName === 'Premium'
+                    ? [...VEHICLE_TYPES]
+                    : ['Sedán', 'Camioneta Corta', 'Camioneta Larga'];
+                const availFor = Array.isArray(p?.availableFor) && p.availableFor.length
+                    ? p.availableFor.filter(t => VEHICLE_TYPES.includes(t))
+                    : defaultAvail;
+
+                let motoPrice = Number(rawPrices['Moto'] ?? 0);
+                if (cleanName === 'Estándar' && rawPrices['Moto'] === 55) motoPrice = 50;
+                if (cleanName === 'Premium' && !rawPrices['Moto']) motoPrice = 100;
+
+                return {
+                    id: p?.id || ('pkg-' + idx + '-' + Date.now()),
+                    name: cleanName,
+                    description: String(p?.description || ''),
+                    motoDescription: String(
+                        p?.motoDescription ||
+                        (cleanName === 'Premium'
+                            ? 'Engrasado de cadena y encerado'
+                            : cleanName === 'Estándar'
+                                ? 'Lavado a presión, shampoo y detallado básico para moto'
+                                : '')
+                    ),
+                    estMinutes: Math.max(5, Number(p?.estMinutes) || 25),
+                    availableFor: availFor.length ? availFor : [...VEHICLE_TYPES],
+                    prices: {
+                        'Sedán': Number(rawPrices['Sedán'] ?? basePrice),
+                        'Camioneta Corta': Number(rawPrices['Camioneta Corta'] ?? (basePrice + 20)),
+                        'Camioneta Larga': Number(rawPrices['Camioneta Larga'] ?? (basePrice + 40)),
+                        'Moto': availFor.includes('Moto') ? motoPrice : 0
+                    }
+                };
+            });
+        }
+
+        function getPackagePriceForType(pkg, vehicleType) {
+            if (!pkg) return 0;
+            const vType = VEHICLE_TYPES.includes(vehicleType) ? vehicleType : 'Sedán';
+            if (!isPackageAvailableForType(pkg, vType)) return 0;
+            if (pkg.prices && typeof pkg.prices === 'object' && pkg.prices[vType] !== undefined) {
+                return Number(pkg.prices[vType]) || 0;
+            }
+            return Number(pkg.price) || 0;
+        }
 
         function createInitialState() {
             return {
@@ -975,7 +1141,7 @@
                 },
                 adminPin: '1234',
                 washers: ['Carlos', 'Mateo'],
-                packages: DEFAULT_PACKAGES.map(p => ({ ...p })),
+                packages: cloneDefaultPackages(),
                 vehicles: [],
                 expenses: []
             };
@@ -983,7 +1149,7 @@
 
         function loadState() {
             try {
-                const raw = localStorage.getItem(STORAGE_KEY);
+                const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('el_champusito_operacion_v4');
                 if (!raw) return createInitialState();
                 const parsed = JSON.parse(raw);
                 const base = createInitialState();
@@ -993,7 +1159,7 @@
                     branding: { ...base.branding, ...(parsed.branding || {}) },
                     adminPin: parsed.adminPin ? String(parsed.adminPin) : '1234',
                     washers: Array.isArray(parsed.washers) && parsed.washers.length ? parsed.washers : ['Carlos', 'Mateo'],
-                    packages: Array.isArray(parsed.packages) && parsed.packages.length ? parsed.packages : base.packages,
+                    packages: normalizePackagesList(parsed.packages),
                     vehicles: Array.isArray(parsed.vehicles) ? parsed.vehicles : [],
                     expenses: Array.isArray(parsed.expenses) ? parsed.expenses : []
                 };
@@ -1007,9 +1173,179 @@
         function saveState() {
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-            } catch (_e) {
-                showToast('Almacenamiento local lleno: intenta reducir fotos.', 'error');
+            } catch (_e) {}
+        }
+
+        // Editor Matricial de Servicios y Precios (Protegido por PIN Admin)
+        function openPricingModal() {
+            requestAdminAuth(() => {
+                renderPricingEditorRows(appState.packages);
+                document.getElementById('new-service-name').value = '';
+                document.getElementById('new-service-desc').value = '';
+                document.getElementById('new-service-mins').value = '';
+                document.getElementById('new-service-price-sedan').value = '';
+                document.getElementById('new-service-price-corta').value = '';
+                document.getElementById('new-service-price-larga').value = '';
+                document.getElementById('new-service-price-moto').value = '';
+                document.getElementById('new-admin-pin-input').value = '';
+                openModal('modal-pricing-editor');
+            }, 'Se requiere sesión de Administrador para editar servicios y precios.');
+        }
+
+        function collectCurrentEditorPackages() {
+            const items = [];
+            document.querySelectorAll('[data-pkg-row]').forEach(row => {
+                const id = row.getAttribute('data-pkg-row');
+                const name = (row.querySelector('[data-pkg-name]')?.value || '').trim();
+                const description = (row.querySelector('[data-pkg-desc]')?.value || '').trim();
+                const motoDescription = (row.querySelector('[data-pkg-moto-desc]')?.value || '').trim();
+                const estMinutes = Math.max(5, Number(row.querySelector('[data-pkg-mins]')?.value) || 25);
+                const pSedan = Math.max(0, Number(row.querySelector('[data-pkg-price-sedan]')?.value) || 0);
+                const pCorta = Math.max(0, Number(row.querySelector('[data-pkg-price-corta]')?.value) || 0);
+                const pLarga = Math.max(0, Number(row.querySelector('[data-pkg-price-larga]')?.value) || 0);
+                const pMoto = Math.max(0, Number(row.querySelector('[data-pkg-price-moto]')?.value) || 0);
+                const availableFor = [];
+                row.querySelectorAll('[data-pkg-avail]').forEach(chk => {
+                    if (chk.checked) availableFor.push(chk.getAttribute('data-pkg-avail'));
+                });
+                if (!availableFor.length) availableFor.push('Sedán');
+                if (name) {
+                    items.push({
+                        id,
+                        name,
+                        description,
+                        motoDescription,
+                        estMinutes,
+                        availableFor,
+                        prices: {
+                            'Sedán': pSedan,
+                            'Camioneta Corta': pCorta,
+                            'Camioneta Larga': pLarga,
+                            'Moto': availableFor.includes('Moto') ? pMoto : 0
+                        }
+                    });
+                }
+            });
+            return items;
+        }
+
+        function renderPricingEditorRows(list) {
+            const rows = document.getElementById('pricing-editor-rows');
+            if (!rows) return;
+            const safeList = normalizePackagesList(list);
+
+            rows.innerHTML = safeList.map(pkg => `
+                <div data-pkg-row="${escapeHtml(pkg.id)}" class="bg-[#f3f8fc] border border-[#d2e3f0] rounded-2xl p-3.5 space-y-2.5">
+                    <div class="flex items-center justify-between gap-2">
+                        <input type="text" data-pkg-name value="${escapeHtml(pkg.name)}" required placeholder="Nombre del paquete"
+                               class="flex-1 px-3 py-1.5 bg-white border border-[#d2e3f0] rounded-xl text-xs font-extrabold text-[#0f2942]">
+                        <div class="flex items-center gap-1 bg-white border border-[#d2e3f0] rounded-xl px-2 py-1.5 w-20">
+                            <input type="number" data-pkg-mins min="5" step="5" value="${Number(pkg.estMinutes) || 25}"
+                                   class="w-full font-mono-num text-xs font-bold text-[#0f2942] text-right focus:outline-none">
+                            <span class="text-[10px] font-bold text-slate-500">m</span>
+                        </div>
+                        <button type="button" onclick="removeServiceRowInEditor('${escapeHtml(pkg.id)}')" title="Eliminar paquete"
+                                class="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 text-xs font-bold cursor-pointer">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                    <input type="text" data-pkg-desc value="${escapeHtml(pkg.description || '')}" placeholder="Descripción para autos / camionetas"
+                           class="w-full px-3 py-1.5 bg-white border border-[#d2e3f0] rounded-xl text-[11px] font-medium text-slate-600">
+                    <input type="text" data-pkg-moto-desc value="${escapeHtml(pkg.motoDescription || '')}" placeholder="Descripción específica para Moto (ej. Engrasado de cadena y encerado)"
+                           class="w-full px-3 py-1.5 bg-white border border-emerald-200 rounded-xl text-[11px] font-medium text-emerald-800">
+                    <div class="flex flex-wrap items-center gap-3 text-[11px] font-bold text-[#0f2942]">
+                        <span class="text-[10px] font-extrabold uppercase text-slate-500">Aplica en:</span>
+                        ${VEHICLE_TYPES.map(vType => `
+                            <label class="inline-flex items-center gap-1 cursor-pointer">
+                                <input type="checkbox" data-pkg-avail="${escapeHtml(vType)}" ${isPackageAvailableForType(pkg, vType) ? 'checked' : ''}
+                                       class="rounded text-[#10b981]">
+                                <span>${escapeHtml(vType)}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div class="bg-white border border-[#d2e3f0] rounded-xl px-2.5 py-1.5">
+                            <span class="block text-[9px] font-extrabold uppercase text-[#0284c7]">Sedán</span>
+                            <div class="flex items-center gap-1">
+                                <span class="font-mono-num text-xs font-bold text-slate-400">$</span>
+                                <input type="number" data-pkg-price-sedan min="0" step="5" value="${getPackagePriceForType(pkg, 'Sedán')}"
+                                       class="w-full font-mono-num text-xs font-extrabold text-[#0f2942] text-right focus:outline-none">
+                            </div>
+                        </div>
+                        <div class="bg-white border border-[#d2e3f0] rounded-xl px-2.5 py-1.5">
+                            <span class="block text-[9px] font-extrabold uppercase text-[#0284c7]">Cam. Corta</span>
+                            <div class="flex items-center gap-1">
+                                <span class="font-mono-num text-xs font-bold text-slate-400">$</span>
+                                <input type="number" data-pkg-price-corta min="0" step="5" value="${getPackagePriceForType(pkg, 'Camioneta Corta')}"
+                                       class="w-full font-mono-num text-xs font-extrabold text-[#0f2942] text-right focus:outline-none">
+                            </div>
+                        </div>
+                        <div class="bg-white border border-[#d2e3f0] rounded-xl px-2.5 py-1.5">
+                            <span class="block text-[9px] font-extrabold uppercase text-[#0284c7]">Cam. Larga</span>
+                            <div class="flex items-center gap-1">
+                                <span class="font-mono-num text-xs font-bold text-slate-400">$</span>
+                                <input type="number" data-pkg-price-larga min="0" step="5" value="${getPackagePriceForType(pkg, 'Camioneta Larga')}"
+                                       class="w-full font-mono-num text-xs font-extrabold text-[#0f2942] text-right focus:outline-none">
+                            </div>
+                        </div>
+                        <div class="bg-white border border-[#d2e3f0] rounded-xl px-2.5 py-1.5">
+                            <span class="block text-[9px] font-extrabold uppercase text-[#10b981]">Moto</span>
+                            <div class="flex items-center gap-1">
+                                <span class="font-mono-num text-xs font-bold text-slate-400">$</span>
+                                <input type="number" data-pkg-price-moto min="0" step="5" value="${getPackagePriceForType(pkg, 'Moto')}"
+                                       class="w-full font-mono-num text-xs font-extrabold text-[#0f2942] text-right focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addServiceRowInEditor() {
+            const nameEl = document.getElementById('new-service-name');
+            const descEl = document.getElementById('new-service-desc');
+            const minsEl = document.getElementById('new-service-mins');
+            const pSedan = Math.max(0, Number(document.getElementById('new-service-price-sedan')?.value) || 0);
+            const pCorta = Math.max(0, Number(document.getElementById('new-service-price-corta')?.value) || 0);
+            const pLarga = Math.max(0, Number(document.getElementById('new-service-price-larga')?.value) || 0);
+            const pMoto = Math.max(0, Number(document.getElementById('new-service-price-moto')?.value) || 0);
+            const name = (nameEl?.value || '').trim();
+            const description = (descEl?.value || '').trim();
+            const estMinutes = Math.max(5, Number(minsEl?.value) || 30);
+
+            if (!name) {
+                showToast('Escribe el nombre del nuevo paquete.', 'error');
+                nameEl?.focus();
+                return;
             }
+
+            const current = collectCurrentEditorPackages();
+            const availableFor = ['Sedán', 'Camioneta Corta', 'Camioneta Larga'];
+            if (pMoto > 0) availableFor.push('Moto');
+            current.push({
+                id: 'pkg-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+                name,
+                description,
+                motoDescription: pMoto > 0 ? description : '',
+                estMinutes,
+                availableFor,
+                prices: {
+                    'Sedán': pSedan,
+                    'Camioneta Corta': pCorta,
+                    'Camioneta Larga': pLarga,
+                    'Moto': pMoto
+                }
+            });
+            renderPricingEditorRows(current);
+
+            nameEl.value = '';
+            descEl.value = '';
+            minsEl.value = '';
+            document.getElementById('new-service-price-sedan').value = '';
+            document.getElementById('new-service-price-corta').value = '';
+            document.getElementById('new-service-price-larga').value = '';
+            document.getElementById('new-service-price-moto').value = '';
+            showToast(`Paquete "${name}" agregado.`, 'info');
         }
 
         // Gestión de sesión del dispositivo (sessionStorage + localStorage)
@@ -1313,95 +1649,10 @@
             showToast('PIN de Administrador actualizado.', 'success');
         }
 
-        // Editor de Servicios y Precios (Protegido por PIN Admin)
-        function openPricingModal() {
-            requestAdminAuth(() => {
-                renderPricingEditorRows(appState.packages);
-                document.getElementById('new-service-name').value = '';
-                document.getElementById('new-service-price').value = '';
-                document.getElementById('new-service-mins').value = '';
-                document.getElementById('new-admin-pin-input').value = '';
-                openModal('modal-pricing-editor');
-            }, 'Se requiere sesión de Administrador para editar servicios y precios.');
-        }
-
-        function collectCurrentEditorPackages() {
-            const items = [];
-            document.querySelectorAll('[data-pkg-row]').forEach(row => {
-                const id = row.getAttribute('data-pkg-row');
-                const name = (row.querySelector('[data-pkg-name]')?.value || '').trim();
-                const price = Math.max(0, Number(row.querySelector('[data-pkg-price]')?.value) || 0);
-                const estMinutes = Math.max(5, Number(row.querySelector('[data-pkg-mins]')?.value) || 30);
-                if (name) items.push({ id, name, price, estMinutes });
-            });
-            return items;
-        }
-
-        function renderPricingEditorRows(list) {
-            const rows = document.getElementById('pricing-editor-rows');
-            if (!rows) return;
-            const safeList = Array.isArray(list) && list.length ? list : DEFAULT_PACKAGES.slice(0, 1);
-
-            rows.innerHTML = safeList.map(pkg => `
-                <div data-pkg-row="${escapeHtml(pkg.id)}" class="bg-[#f3f8fc] border border-[#d2e3f0] rounded-2xl p-3 space-y-2">
-                    <div class="flex items-center justify-between gap-2">
-                        <input type="text" data-pkg-name value="${escapeHtml(pkg.name)}" required placeholder="Nombre del servicio"
-                               class="flex-1 px-2.5 py-1.5 bg-white border border-[#d2e3f0] rounded-xl text-xs font-extrabold text-[#0f2942]">
-                        <button type="button" onclick="removeServiceRowInEditor('${escapeHtml(pkg.id)}')" title="Eliminar servicio"
-                                class="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 text-xs font-bold cursor-pointer">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="flex items-center gap-1.5 bg-white border border-[#d2e3f0] rounded-xl px-2.5 py-1">
-                            <span class="font-mono-num text-xs font-bold text-[#0284c7]">$</span>
-                            <input type="number" data-pkg-price min="0" step="5" value="${Number(pkg.price) || 0}"
-                                   class="w-full font-mono-num text-xs font-extrabold text-[#0f2942] text-right focus:outline-none">
-                            <span class="text-[10px] font-bold text-slate-400">MXN</span>
-                        </div>
-                        <div class="flex items-center gap-1.5 bg-white border border-[#d2e3f0] rounded-xl px-2.5 py-1">
-                            <input type="number" data-pkg-mins min="5" step="5" value="${Number(pkg.estMinutes) || 30}"
-                                   class="w-full font-mono-num text-xs font-bold text-[#0f2942] text-right focus:outline-none">
-                            <span class="text-[10px] font-bold text-slate-500">min</span>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function addServiceRowInEditor() {
-            const nameEl = document.getElementById('new-service-name');
-            const priceEl = document.getElementById('new-service-price');
-            const minsEl = document.getElementById('new-service-mins');
-            const name = (nameEl?.value || '').trim();
-            const price = Math.max(0, Number(priceEl?.value) || 0);
-            const estMinutes = Math.max(5, Number(minsEl?.value) || 40);
-
-            if (!name) {
-                showToast('Escribe el nombre del nuevo servicio.', 'error');
-                nameEl?.focus();
-                return;
-            }
-
-            const current = collectCurrentEditorPackages();
-            current.push({
-                id: 'pkg-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
-                name,
-                price,
-                estMinutes
-            });
-            renderPricingEditorRows(current);
-
-            nameEl.value = '';
-            priceEl.value = '';
-            minsEl.value = '';
-            showToast(`Servicio "${name}" agregado.`, 'info');
-        }
-
         function removeServiceRowInEditor(rowId) {
             const current = collectCurrentEditorPackages();
             if (current.length <= 1) {
-                showToast('Debe quedar al menos 1 servicio activo.', 'error');
+                showToast('Debe quedar al menos 1 paquete activo.', 'error');
                 return;
             }
             renderPricingEditorRows(current.filter(item => item.id !== rowId));
@@ -1488,12 +1739,16 @@
         function populateFormSelects() {
             const pkgSel = document.getElementById('modal-package');
             const washSel = document.getElementById('modal-washer');
+            const vType = document.getElementById('modal-vehicle-type')?.value || 'Sedán';
             if (pkgSel) {
                 const prev = pkgSel.value;
-                pkgSel.innerHTML = appState.packages.map(p =>
-                    `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)} ($${p.price})</option>`
-                ).join('');
-                if (prev && appState.packages.some(p => p.name === prev)) pkgSel.value = prev;
+                const availablePkgs = appState.packages.filter(p => isPackageAvailableForType(p, vType));
+                const listToShow = availablePkgs.length ? availablePkgs : appState.packages;
+                pkgSel.innerHTML = listToShow.map(p => {
+                    const priceForType = getPackagePriceForType(p, vType);
+                    return `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)} ($${priceForType})</option>`;
+                }).join('');
+                if (prev && listToShow.some(p => p.name === prev)) pkgSel.value = prev;
             }
             if (washSel) {
                 const prevW = washSel.value;
@@ -1505,18 +1760,29 @@
             syncPackagePrice();
         }
 
+        function onModalVehicleTypeChange() {
+            populateFormSelects();
+        }
+
         function syncPackagePrice() {
             const pkgSel = document.getElementById('modal-package');
             const priceInp = document.getElementById('modal-price');
+            const descHint = document.getElementById('modal-package-desc-hint');
+            const vType = document.getElementById('modal-vehicle-type')?.value || 'Sedán';
             if (!pkgSel || !priceInp) return;
-            const found = appState.packages.find(p => p.name === pkgSel.value);
-            if (found) priceInp.value = found.price;
-        }
-
-        function handleManualPriceInput() {
-            if (!isAdminLoggedIn()) {
-                syncPackagePrice();
-                requestAdminAuth(null, 'Solo el Administrador puede cambiar manualmente el precio del servicio.');
+            const availablePkgs = appState.packages.filter(p => isPackageAvailableForType(p, vType));
+            const found = availablePkgs.find(p => p.name === pkgSel.value)
+                || availablePkgs[0]
+                || appState.packages.find(p => p.name === pkgSel.value)
+                || appState.packages[0];
+            if (found) {
+                priceInp.value = getPackagePriceForType(found, vType);
+                const descText = getPackageDescriptionForType(found, vType);
+                if (descHint) {
+                    descHint.textContent = descText
+                        ? `${found.name} (${vType}): ${descText} · Est. ${found.estMinutes} min`
+                        : `${found.name} (${vType}) · Est. ${found.estMinutes} min`;
+                }
             }
         }
 
@@ -1585,6 +1851,7 @@
             document.getElementById('modal-client').value = '';
             document.getElementById('modal-phone').value = '';
             document.getElementById('modal-note').value = '';
+            document.getElementById('modal-vehicle-type').value = 'Sedán';
             document.getElementById('modal-paid-status').value = 'Por Cobrar';
             document.getElementById('modal-payment-method').value = 'Pendiente';
             document.getElementById('modal-stage').value = 'En Lavado';
@@ -1602,9 +1869,11 @@
             const model = document.getElementById('modal-model').value.trim();
             const client = document.getElementById('modal-client').value.trim();
             const phone = document.getElementById('modal-phone').value.trim();
+            const vehicleType = document.getElementById('modal-vehicle-type').value || 'Sedán';
             const pkgName = document.getElementById('modal-package').value;
             const pkgObj = appState.packages.find(p => p.name === pkgName) || appState.packages[0];
-            const price = Math.max(0, Number(document.getElementById('modal-price').value) || pkgObj?.price || 180);
+            const defaultPrice = getPackagePriceForType(pkgObj, vehicleType);
+            const price = Math.max(0, Number(document.getElementById('modal-price').value) || defaultPrice);
             const washer = document.getElementById('modal-washer').value || appState.washers[0];
             const paidStatus = document.getElementById('modal-paid-status').value;
             const paymentMethod = paidStatus === 'Pagado'
@@ -1617,6 +1886,7 @@
                 id: 'v-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
                 plate,
                 model,
+                vehicleType,
                 client,
                 phone,
                 packageName: pkgName,
@@ -1626,7 +1896,55 @@
                 note,
                 photo: uploadedModalPhoto || null,
                 entryTime: Date.now(),
-                estimatedMinutes: pkgObj?.estMinutes || 40,
+                estimatedMinutes: pkgObj?.estMinutes || 25,
+                paid: paidStatus === 'Pagado',
+                paymentMethod
+            };
+
+            appState.vehicles.unshift(car);
+            document.getElementById('modal-package-desc-hint').textContent = '';
+            populateFormSelects();
+            openModal('modal-new-vehicle');
+        }
+
+        function closeNewVehicleModal() {
+            closeModal('modal-new-vehicle');
+        }
+
+        function handleModalRegister(event) {
+            event.preventDefault();
+            const plate = document.getElementById('modal-plate').value.trim().toUpperCase();
+            const model = document.getElementById('modal-model').value.trim();
+            const client = document.getElementById('modal-client').value.trim();
+            const phone = document.getElementById('modal-phone').value.trim();
+            const vehicleType = document.getElementById('modal-vehicle-type').value || 'Sedán';
+            const pkgName = document.getElementById('modal-package').value;
+            const pkgObj = appState.packages.find(p => p.name === pkgName) || appState.packages[0];
+            const defaultPrice = getPackagePriceForType(pkgObj, vehicleType);
+            const price = Math.max(0, Number(document.getElementById('modal-price').value) || defaultPrice);
+            const washer = document.getElementById('modal-washer').value || appState.washers[0];
+            const paidStatus = document.getElementById('modal-paid-status').value;
+            const paymentMethod = paidStatus === 'Pagado'
+                ? (document.getElementById('modal-payment-method').value === 'Pendiente' ? 'Efectivo' : document.getElementById('modal-payment-method').value)
+                : 'Pendiente';
+            const stage = document.getElementById('modal-stage').value || 'En Lavado';
+            const note = document.getElementById('modal-note').value.trim();
+
+            const car = {
+                id: 'v-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+                plate,
+                model,
+                vehicleType,
+                client,
+                phone,
+                packageName: pkgName,
+                price,
+                washer,
+                stage,
+                note,
+                photo: uploadedModalPhoto || null,
+                entryTime: Date.now(),
+                estimatedMinutes: pkgObj?.estMinutes || 25,
                 paid: paidStatus === 'Pagado',
                 paymentMethod
             };
@@ -1637,7 +1955,7 @@
             closeNewVehicleModal();
             switchView('patio');
             renderCashAndRecepcion();
-            showToast(`Auto ${car.plate} registrado.`, 'success');
+            showToast(`Auto ${car.plate} (${vehicleType}) registrado.`, 'success');
         }
 
         // Filtros y renderizado del Patio
@@ -1817,10 +2135,12 @@
                             </button>
                         </div>
 
-                        <!-- Fila 4: Servicio + Total + Hora Entrada -->
+                        <!-- Fila 4: Servicio + Tipo de Vehículo + Total + Hora Entrada -->
                         <div class="bg-slate-50 border border-slate-200/80 rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2">
                             <div class="min-w-0">
-                                <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">SERVICIO · ${formatTime12h(v.entryTime)}</p>
+                                <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                                    ${escapeHtml(v.vehicleType || 'Sedán')} · ${formatTime12h(v.entryTime)}
+                                </p>
                                 <p class="text-xs font-extrabold text-[#0f2942] truncate mt-0.5">${escapeHtml(v.packageName)}</p>
                             </div>
                             <div class="text-right shrink-0">
@@ -2081,6 +2401,7 @@
                 ? appState.vehicles.map(v => `
                     <tr>
                         <td>${escapeHtml(v.plate)}</td>
+                        <td>${escapeHtml(v.vehicleType || 'Sedán')}</td>
                         <td>${escapeHtml(v.model)}</td>
                         <td>${escapeHtml(v.client)}</td>
                         <td>${escapeHtml(v.washer)}</td>
@@ -2092,17 +2413,17 @@
                         <td>${escapeHtml(v.note || '')}</td>
                     </tr>
                 `).join('')
-                : `<tr><td colspan="10">Sin vehículos registrados en este turno.</td></tr>`;
+                : `<tr><td colspan="11">Sin vehículos registrados en este turno.</td></tr>`;
 
             const expensesRows = appState.expenses.length
                 ? appState.expenses.map(e => `
                     <tr>
-                        <td colspan="4">${escapeHtml(e.desc)}</td>
+                        <td colspan="5">${escapeHtml(e.desc)}</td>
                         <td style="text-align:right;">${formatMoney(e.amount)}</td>
                         <td colspan="5">${formatTime12h(e.createdAt)}</td>
                     </tr>
                 `).join('')
-                : `<tr><td colspan="10">Sin gastos registrados en este turno.</td></tr>`;
+                : `<tr><td colspan="11">Sin gastos registrados en este turno.</td></tr>`;
 
             const htmlTable = `
                 <html xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -2112,36 +2433,37 @@
                 <body>
                     <table border="1" cellspacing="0" cellpadding="5" style="font-family:Arial,sans-serif;font-size:12px;">
                         <tr>
-                            <th colspan="10" style="background:#0f2942;color:#ffffff;font-size:15px;">
+                            <th colspan="11" style="background:#0f2942;color:#ffffff;font-size:15px;">
                                 ${escapeHtml(brand)} - REPORTE OPERATIVO Y CORTE DE CAJA ($ MXN)
                             </th>
                         </tr>
                         <tr>
                             <td colspan="5"><strong>Fecha de Reporte:</strong> ${escapeHtml(dateStr)}</td>
-                            <td colspan="5"><strong>Hora de Generación:</strong> ${escapeHtml(timeStr)}</td>
+                            <td colspan="6"><strong>Hora de Generación:</strong> ${escapeHtml(timeStr)}</td>
                         </tr>
-                        <tr><td colspan="10"></td></tr>
+                        <tr><td colspan="11"></td></tr>
                         <tr>
-                            <th colspan="10" style="background:#0284c7;color:#ffffff;text-align:left;">1. RESUMEN DE CAJA DEL TURNO</th>
+                            <th colspan="11" style="background:#0284c7;color:#ffffff;text-align:left;">1. RESUMEN DE CAJA DEL TURNO</th>
                         </tr>
                         <tr>
-                            <th colspan="2">Total Cobrado</th>
+                            <th colspan="3">Total Cobrado</th>
                             <th colspan="3">Gastos Registrados</th>
                             <th colspan="2">Por Cobrar</th>
                             <th colspan="3">Balance Neto en Caja</th>
                         </tr>
                         <tr>
-                            <td colspan="2" style="font-weight:bold;color:#047857;">${formatMoney(collected)}</td>
+                            <td colspan="3" style="font-weight:bold;color:#047857;">${formatMoney(collected)}</td>
                             <td colspan="3" style="font-weight:bold;color:#be123c;">${formatMoney(expensesTotal)}</td>
                             <td colspan="2" style="font-weight:bold;color:#b45309;">${formatMoney(pending)}</td>
                             <td colspan="3" style="font-weight:bold;color:#0f2942;">${formatMoney(net)}</td>
                         </tr>
-                        <tr><td colspan="10"></td></tr>
+                        <tr><td colspan="11"></td></tr>
                         <tr>
-                            <th colspan="10" style="background:#0284c7;color:#ffffff;text-align:left;">2. DETALLE DE VEHÍCULOS DEL TURNO (${appState.vehicles.length})</th>
+                            <th colspan="11" style="background:#0284c7;color:#ffffff;text-align:left;">2. DETALLE DE VEHÍCULOS DEL TURNO (${appState.vehicles.length})</th>
                         </tr>
                         <tr style="background:#e2e8f0;font-weight:bold;">
                             <th>Placa</th>
+                            <th>Tipo</th>
                             <th>Vehículo</th>
                             <th>Cliente</th>
                             <th>Lavador</th>
@@ -2153,12 +2475,12 @@
                             <th>Notas</th>
                         </tr>
                         ${vehiclesRows}
-                        <tr><td colspan="10"></td></tr>
+                        <tr><td colspan="11"></td></tr>
                         <tr>
-                            <th colspan="10" style="background:#0284c7;color:#ffffff;text-align:left;">3. DETALLE DE GASTOS DEL TURNO (${appState.expenses.length})</th>
+                            <th colspan="11" style="background:#0284c7;color:#ffffff;text-align:left;">3. DETALLE DE GASTOS DEL TURNO (${appState.expenses.length})</th>
                         </tr>
                         <tr style="background:#e2e8f0;font-weight:bold;">
-                            <th colspan="4">Concepto del Gasto</th>
+                            <th colspan="5">Concepto del Gasto</th>
                             <th>Monto</th>
                             <th colspan="5">Hora Registro</th>
                         </tr>
@@ -2204,7 +2526,18 @@
             closeModal('modal-close-shift');
             renderPatio();
             renderCashAndRecepcion();
-            showToast('Turno cerrado y datos limpiados correctamente.', 'success');
+            showToast('Turno vaciado y sincronizado.', 'success');
+        }
+
+        function setPricingPreviewType(vType) {
+            pricingPreviewVehicleType = VEHICLE_TYPES.includes(vType) ? vType : 'Sedán';
+            document.querySelectorAll('.pricing-tab').forEach(btn => {
+                const isActive = btn.getAttribute('data-vtype') === pricingPreviewVehicleType;
+                btn.className = isActive
+                    ? 'pricing-tab px-2 py-1.5 rounded-lg bg-[#0f2942] text-white text-[11px] font-extrabold cursor-pointer transition-all truncate'
+                    : 'pricing-tab px-2 py-1.5 rounded-lg text-[#0284c7] hover:bg-white text-[11px] font-bold cursor-pointer transition-all truncate';
+            });
+            renderCashAndRecepcion();
         }
 
         // Renderizado de Caja, Lavadores y Precios
@@ -2274,15 +2607,25 @@
             if (hint) {
                 hint.textContent = isAdminLoggedIn()
                     ? 'Modo Admin activo: puedes modificar precios y servicios.'
-                    : 'Consulta rápida · Editar requiere PIN Administrador.';
+                    : `Tarifas para ${pricingPreviewVehicleType} · Editar requiere PIN Admin.`;
             }
             if (pkgList) {
-                pkgList.innerHTML = appState.packages.map(pkg => `
-                    <div class="flex items-center justify-between px-3.5 py-2 rounded-xl bg-[#f3f8fc] border border-[#d2e3f0] text-xs">
-                        <span class="font-bold text-[#0f2942]">${escapeHtml(pkg.name)} <span class="text-[10px] text-slate-400">(${pkg.estMinutes} min)</span></span>
-                        <span class="font-mono-num font-extrabold text-[#10b981]">${formatMoney(pkg.price)}</span>
-                    </div>
-                `).join('');
+                const visiblePkgs = appState.packages.filter(pkg => isPackageAvailableForType(pkg, pricingPreviewVehicleType));
+                pkgList.innerHTML = visiblePkgs.map(pkg => {
+                    const price = getPackagePriceForType(pkg, pricingPreviewVehicleType);
+                    const desc = getPackageDescriptionForType(pkg, pricingPreviewVehicleType);
+                    return `
+                        <div class="px-3.5 py-2.5 rounded-xl bg-[#f3f8fc] border border-[#d2e3f0] text-xs space-y-0.5">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="font-extrabold text-[#0f2942]">
+                                    ${escapeHtml(pkg.name)} <span class="text-[10px] font-semibold text-slate-400">(${pkg.estMinutes} min)</span>
+                                </span>
+                                <span class="font-mono-num font-extrabold text-[#10b981] text-sm">${formatMoney(price)}</span>
+                            </div>
+                            ${desc ? `<p class="text-[11px] text-slate-500 leading-snug">${escapeHtml(desc)}</p>` : ''}
+                        </div>
+                    `;
+                }).join('');
             }
         }
 
@@ -2311,12 +2654,12 @@
     <!-- ===================================================================== -->
     <script>
         (function () {
-            window.__app_id = 'el-champusito-autolavado';
+            window.__app_id = 'el-champusito-26d51';
             window.__firebase_config = {
                 apiKey: 'AIzaSyD5vu3XCdoW5V5WQvXyjWhbpKdb90dBhuE',
-                authDomain: 'el-champusito-autolavado.firebaseapp.com',
-                projectId: 'el-champusito-autolavado',
-                storageBucket: 'el-champusito-autolavado.firebasestorage.app',
+                authDomain: 'el-champusito-26d51.firebaseapp.com',
+                projectId: 'el-champusito-26d51',
+                storageBucket: 'el-champusito-26d51.firebasestorage.app',
                 messagingSenderId: '188694541518',
                 appId: '1:188694541518:web:9a19844be95ea514094c9f',
                 measurementId: 'G-PFY8H4304T'
@@ -2450,7 +2793,10 @@
                             ...base,
                             ...appState,
                             ...remoteData,
-                            branding: { ...(base.branding || {}), ...(remoteData.branding || {}) }
+                            branding: { ...(base.branding || {}), ...(remoteData.branding || {}) },
+                            packages: typeof normalizePackagesList === 'function'
+                                ? normalizePackagesList(remoteData.packages)
+                                : (remoteData.packages || base.packages)
                         };
 
                         try {
