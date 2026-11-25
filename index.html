@@ -1855,53 +1855,6 @@
             document.getElementById('modal-paid-status').value = 'Por Cobrar';
             document.getElementById('modal-payment-method').value = 'Pendiente';
             document.getElementById('modal-stage').value = 'En Lavado';
-            populateFormSelects();
-            openModal('modal-new-vehicle');
-        }
-
-        function closeNewVehicleModal() {
-            closeModal('modal-new-vehicle');
-        }
-
-        function handleModalRegister(event) {
-            event.preventDefault();
-            const plate = document.getElementById('modal-plate').value.trim().toUpperCase();
-            const model = document.getElementById('modal-model').value.trim();
-            const client = document.getElementById('modal-client').value.trim();
-            const phone = document.getElementById('modal-phone').value.trim();
-            const vehicleType = document.getElementById('modal-vehicle-type').value || 'Sedán';
-            const pkgName = document.getElementById('modal-package').value;
-            const pkgObj = appState.packages.find(p => p.name === pkgName) || appState.packages[0];
-            const defaultPrice = getPackagePriceForType(pkgObj, vehicleType);
-            const price = Math.max(0, Number(document.getElementById('modal-price').value) || defaultPrice);
-            const washer = document.getElementById('modal-washer').value || appState.washers[0];
-            const paidStatus = document.getElementById('modal-paid-status').value;
-            const paymentMethod = paidStatus === 'Pagado'
-                ? (document.getElementById('modal-payment-method').value === 'Pendiente' ? 'Efectivo' : document.getElementById('modal-payment-method').value)
-                : 'Pendiente';
-            const stage = document.getElementById('modal-stage').value || 'En Lavado';
-            const note = document.getElementById('modal-note').value.trim();
-
-            const car = {
-                id: 'v-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
-                plate,
-                model,
-                vehicleType,
-                client,
-                phone,
-                packageName: pkgName,
-                price,
-                washer,
-                stage,
-                note,
-                photo: uploadedModalPhoto || null,
-                entryTime: Date.now(),
-                estimatedMinutes: pkgObj?.estMinutes || 25,
-                paid: paidStatus === 'Pagado',
-                paymentMethod
-            };
-
-            appState.vehicles.unshift(car);
             document.getElementById('modal-package-desc-hint').textContent = '';
             populateFormSelects();
             openModal('modal-new-vehicle');
@@ -2808,14 +2761,14 @@
                         if (typeof populateFormSelects === 'function') populateFormSelects();
                         if (typeof renderPatio === 'function') renderPatio();
                         if (typeof renderCashAndRecepcion === 'function') renderCashAndRecepcion();
-
-                        isApplyingRemote = false;
                     }
                     setSyncStatus('online', 'En línea · Firestore Sincronizado');
                 } catch (_err) {
                     if (lastRemoteStamp === 0) {
                         setSyncStatus('local', 'Respaldo local activo');
                     }
+                } finally {
+                    isApplyingRemote = false;
                 }
             }
 
