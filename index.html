@@ -2542,17 +2542,15 @@
     <!-- INTEGRACIÓN FIREBASE FIRESTORE REST API (estado_patio / actual)       -->
     <!-- ===================================================================== -->
     <script>
-        (function () {
-            window.__app_id = 'el-champusito-26d51';
-            window.__firebase_config = {
-                apiKey: 'AIzaSyD5vu3XCdoW5V5WQvXyjWhbpKdb90dBhuE',
-                authDomain: 'el-champusito-26d51.firebaseapp.com',
-                projectId: 'el-champusito-26d51',
-                storageBucket: 'el-champusito-26d51.firebasestorage.app',
-                messagingSenderId: '188694541518',
-                appId: '1:188694541518:web:9a19844be95ea514094c9f',
-                measurementId: 'G-PFY8H4304T'
-            };
+       const firebaseConfig = {
+  apiKey: "AIzaSyD5vu3XCdoW5V5WQvXyjWhbpKdb90dBhuE",
+  authDomain: "el-champusito-autolavado.firebaseapp.com",
+  projectId: "el-champusito-autolavado",
+  storageBucket: "el-champusito-autolavado.firebasestorage.app",
+  messagingSenderId: "188694541518",
+  appId: "1:188694541518:web:9a19844be95ea514094c9f",
+  measurementId: "G-PFY8H4304T"
+};
 
             function setSyncStatus(mode, text) {
                 const dot = document.getElementById('sync-status-dot');
